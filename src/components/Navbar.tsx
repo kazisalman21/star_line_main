@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Bus, MapPin, Headphones, LayoutDashboard, Ticket } from 'lucide-react';
+import { Menu, X, Bus, MapPin, Headphones, LayoutDashboard, Ticket, Route } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
-  { to: '/', label: 'Home', icon: Bus },
-  { to: '/search', label: 'Search Trips', icon: MapPin },
-  { to: '/routes', label: 'Routes & Fleet', icon: Bus },
-  { to: '/manage-booking', label: 'Manage Booking', icon: Ticket },
-  { to: '/live-tracking', label: 'Live Tracking', icon: MapPin },
-  { to: '/support', label: 'Support', icon: Headphones },
+  { to: '/', label: 'Home' },
+  { to: '/search', label: 'Search Trips' },
+  { to: '/routes', label: 'Routes & Fleet' },
+  { to: '/manage-booking', label: 'My Booking' },
+  { to: '/live-tracking', label: 'Live Tracking' },
+  { to: '/support', label: 'Support' },
 ];
 
 export default function Navbar() {
@@ -17,42 +17,46 @@ export default function Navbar() {
   const location = useLocation();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30">
       <div className="container flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <Bus className="w-5 h-5 text-primary-foreground" />
+            <Bus className="w-4.5 h-4.5 text-primary-foreground" />
           </div>
-          <span className="font-display font-bold text-xl text-foreground">Starline</span>
+          <div className="flex flex-col leading-none">
+            <span className="font-display font-bold text-base text-foreground tracking-tight">Star Line</span>
+            <span className="text-[9px] font-medium text-accent tracking-[0.15em] uppercase">Group</span>
+          </div>
         </Link>
 
         {/* Desktop */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-0.5">
           {navLinks.map(l => (
             <Link
               key={l.to}
               to={l.to}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                 location.pathname === l.to
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
               }`}
             >
               {l.label}
             </Link>
           ))}
+          <div className="w-px h-5 bg-border mx-2" />
           <Link
             to="/admin"
-            className="ml-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary flex items-center gap-1"
+            className="px-3 py-2 rounded-lg text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 flex items-center gap-1.5 transition-colors"
           >
-            <LayoutDashboard className="w-4 h-4" />
+            <LayoutDashboard className="w-3.5 h-3.5" />
             Admin
           </Link>
         </div>
 
         {/* Mobile toggle */}
         <button onClick={() => setOpen(!open)} className="md:hidden p-2 text-foreground">
-          {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
@@ -63,21 +67,20 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-background/95 backdrop-blur-xl border-b border-border overflow-hidden"
+            className="md:hidden bg-background/95 backdrop-blur-2xl border-b border-border overflow-hidden"
           >
-            <div className="container py-4 flex flex-col gap-1">
-              {[...navLinks, { to: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard }].map(l => (
+            <div className="container py-3 flex flex-col gap-0.5">
+              {[...navLinks, { to: '/admin', label: 'Admin Dashboard' }].map(l => (
                 <Link
                   key={l.to}
                   to={l.to}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                     location.pathname === l.to
                       ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
                   }`}
                 >
-                  <l.icon className="w-4 h-4" />
                   {l.label}
                 </Link>
               ))}
