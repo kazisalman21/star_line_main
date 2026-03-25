@@ -102,15 +102,15 @@ export default function AnimatedHero() {
         <div className="road-shimmer" />
       </div>
 
-      {/* Gradient overlays for text readability */}
+      {/* Gradient overlays for text readability — explicit dark colors since hero is a night scene */}
       <div className="absolute inset-0" style={{ zIndex: 7 }}>
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,28%,6%)] via-[hsl(220,28%,6%,0.85)] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,28%,6%)] via-transparent to-[hsl(220,28%,6%,0.4)]" />
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      {/* Content */}
-      <div className="container relative pt-28 pb-16 md:pt-32 md:pb-24" style={{ zIndex: 8 }}>
+      {/* Content — force light text since hero is always a dark night scene */}
+      <div className="container relative pt-28 pb-16 md:pt-32 md:pb-24 text-[hsl(40,10%,92%)]" style={{ zIndex: 8 }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
