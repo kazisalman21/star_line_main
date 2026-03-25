@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import AnimatedHero from '@/components/AnimatedHero';
 import { popularRoutes } from '@/data/mockData';
 import { getToday } from '@/lib/utils';
+import PageHead from '@/components/PageHead';
 
 const features = [
   { icon: Navigation, title: 'Live Tracking', desc: 'Track your coach in real-time from departure to destination' },
@@ -26,6 +27,7 @@ const trustItems = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Book Intercity Bus Tickets" description="Book premium intercity bus tickets with Star Line Group — Bangladesh's trusted bus service. AC Sleeper, Business & Economy coaches." />
       <Navbar />
       <AnimatedHero />
 

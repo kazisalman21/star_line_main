@@ -4,6 +4,7 @@ import { Bus, Users, DollarSign, Clock, AlertTriangle, Headphones, TrendingUp, M
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { adminStats } from '@/data/mockData';
+import PageHead from '@/components/PageHead';
 
 const statCards = [
   { icon: Bus, label: "Today's Trips", value: adminStats.todayTrips, color: 'text-primary' },
@@ -26,6 +27,7 @@ const statusColors: Record<string, string> = {
 export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Operations Dashboard" description="Star Line Group operations command center — real-time analytics and management." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container">

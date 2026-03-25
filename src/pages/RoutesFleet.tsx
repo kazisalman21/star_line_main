@@ -4,6 +4,8 @@ import { ChevronRight, Shield, Snowflake, Wifi, Zap, Coffee, Users, Armchair, St
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { popularRoutes, coachTypes } from '@/data/mockData';
+import PageHead from '@/components/PageHead';
+import { getToday } from '@/lib/utils';
 
 const safetyFeatures = [
   { icon: Shield, title: 'GPS Tracked', desc: 'All coaches are GPS tracked 24/7' },
@@ -21,6 +23,7 @@ const amenityMap: Record<string, typeof Wifi> = {
 export default function RoutesFleet() {
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Routes & Fleet" description="Explore Star Line Group's intercity bus routes across Bangladesh and our premium coach fleet." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container">
@@ -40,7 +43,7 @@ export default function RoutesFleet() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Link
-                    to={`/search?from=${encodeURIComponent(route.from)}&to=${encodeURIComponent(route.to)}&date=2026-03-25&passengers=1`}
+                    to={`/search?from=${encodeURIComponent(route.from)}&to=${encodeURIComponent(route.to)}&date=${getToday()}&passengers=1`}
                     className="glass-card p-5 block card-hover group"
                   >
                     <div className="flex items-center gap-2 mb-3">

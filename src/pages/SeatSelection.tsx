@@ -5,6 +5,7 @@ import { ChevronRight, User, MapPin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getToday } from '@/lib/utils';
+import PageHead from '@/components/PageHead';
 
 const seatLayout = [
   ['A1','','A2','A3'],
@@ -78,6 +79,7 @@ export default function SeatSelection() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Select Your Seats" description="Choose your preferred seats for your Star Line Group bus journey." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container">

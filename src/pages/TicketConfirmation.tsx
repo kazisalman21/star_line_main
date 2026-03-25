@@ -4,6 +4,7 @@ import { CheckCircle2, Download, Headphones, QrCode, Bus, MapPin, Clock, User, C
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getToday } from '@/lib/utils';
+import PageHead from '@/components/PageHead';
 
 export default function TicketConfirmation() {
   const [params] = useSearchParams();
@@ -24,6 +25,7 @@ export default function TicketConfirmation() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Booking Confirmed" description="Your Star Line Group bus ticket has been confirmed. View your digital ticket and QR code." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container max-w-2xl">

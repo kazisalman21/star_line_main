@@ -8,6 +8,7 @@ import SearchForm from '@/components/SearchForm';
 import { generateBusResults, BusResult } from '@/data/mockData';
 import { getToday } from '@/lib/utils';
 import SearchResultsSkeleton from '@/components/SearchResultsSkeleton';
+import PageHead from '@/components/PageHead';
 
 const amenityIcons: Record<string, typeof Wifi> = {
   'AC': Snowflake, 'WiFi': Wifi, 'USB Charging': Zap, 'Snacks': Coffee,
@@ -46,6 +47,7 @@ export default function SearchResults() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title={`${from} to ${to} Buses`} description={`Find and book buses from ${from} to ${to}. Compare fares, timings, and seat availability.`} />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container">

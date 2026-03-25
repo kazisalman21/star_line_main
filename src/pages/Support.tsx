@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, Headphones, Mail, Phone, MessageCircle, HelpCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import PageHead from '@/components/PageHead';
 
 const faqs = [
   {
@@ -50,6 +51,7 @@ export default function Support() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Help & Support" description="Get help with your Star Line Group booking. FAQ, contact support, and live chat." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container max-w-3xl">

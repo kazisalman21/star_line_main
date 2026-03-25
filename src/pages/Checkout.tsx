@@ -5,6 +5,7 @@ import { Shield, CreditCard, Smartphone, Building2, ChevronRight, Lock } from 'l
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getToday } from '@/lib/utils';
+import PageHead from '@/components/PageHead';
 
 const paymentMethods = [
   { id: 'bkash', name: 'bKash', desc: 'Pay with bKash mobile wallet', icon: Smartphone, color: 'text-pink-400' },
@@ -44,6 +45,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Secure Checkout" description="Complete your bus ticket booking securely with bKash, Nagad, Rocket, or card payment." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container max-w-4xl">

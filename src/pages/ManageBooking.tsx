@@ -4,6 +4,7 @@ import { Search, Ticket, XCircle, RefreshCw, Send, CheckCircle2, Clock, AlertCir
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { sampleBooking } from '@/data/mockData';
+import PageHead from '@/components/PageHead';
 
 export default function ManageBooking() {
   const [lookupId, setLookupId] = useState('');
@@ -25,6 +26,7 @@ export default function ManageBooking() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Manage Your Booking" description="Look up, manage, cancel, or reschedule your Star Line Group bus booking." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container max-w-2xl">

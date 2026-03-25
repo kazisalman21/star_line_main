@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Bus, MapPin, Clock, CheckCircle2, AlertTriangle, Navigation, Phone, Wifi, Coffee } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import PageHead from '@/components/PageHead';
 
 const tripData = {
   bookingId: 'STR-2026-48291',
@@ -34,6 +35,7 @@ const tripData = {
 export default function LiveTracking() {
   return (
     <div className="min-h-screen bg-background">
+      <PageHead title="Live Trip Tracking" description="Track your Star Line Group bus in real-time. View current location, ETA, and route progress." />
       <Navbar />
       <div className="pt-20 pb-12">
         <div className="container max-w-3xl">
