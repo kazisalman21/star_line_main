@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Bus, MapPin, Headphones, LayoutDashboard, Ticket, Route } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
+import starlineLogo from '@/assets/starline-logo.png';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
@@ -19,14 +20,8 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30">
       <div className="container flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <Bus className="w-4.5 h-4.5 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="font-display font-bold text-base text-foreground tracking-tight">Star Line</span>
-            <span className="text-[9px] font-medium text-accent tracking-[0.15em] uppercase">Group</span>
-          </div>
+        <Link to="/" className="flex items-center gap-2">
+          <img src={starlineLogo} alt="Star Line Group" className="h-10 w-auto" />
         </Link>
 
         {/* Desktop */}
