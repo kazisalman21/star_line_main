@@ -1,6 +1,10 @@
+import { useState, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Download, Headphones, QrCode, Bus, MapPin, Clock, User, CreditCard, ChevronRight, Ticket } from 'lucide-react';
+import { CheckCircle2, Download, Headphones, Bus, MapPin, Clock, User, CreditCard, ChevronRight, Ticket, Loader2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getToday } from '@/lib/utils';
@@ -23,6 +27,57 @@ export default function TicketConfirmation() {
   const phone = params.get('phone') || '+8801712345678';
   const payment = params.get('payment') || 'bKash';
 
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const qrData = JSON.stringify({
+    id: bookingId,
+    from,
+    to,
+    date,
+    dep,
+    seats: seats.join(','),
+    passenger: name,
+    fare,
+  });
+
+  const downloadTicket = async () => {
+    if (!ticketRef.current || downloading) return;
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(ticketRef.current, {
+        backgroundColor: '#0f1117',
+        scale: 2,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = (canvas.height * pdfW) / canvas.width;
+
+      // Header
+      pdf.setFillColor(180, 30, 50);
+      pdf.rect(0, 0, pdfW, 14, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(14);
+      pdf.text('STAR LINE GROUP', pdfW / 2, 9, { align: 'center' });
+
+      // Ticket image
+      pdf.addImage(imgData, 'PNG', 4, 18, pdfW - 8, pdfH - 8);
+
+      // Footer
+      const footerY = 18 + pdfH - 4;
+      pdf.setFontSize(7);
+      pdf.setTextColor(120, 120, 120);
+      pdf.text('This is a digitally generated ticket. Valid with photo ID.', pdfW / 2, footerY, { align: 'center' });
+
+      pdf.save(`StarLine-${bookingId}.pdf`);
+    } catch (e) {
+      console.error('PDF generation failed:', e);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PageHead title="Booking Confirmed" description="Your Star Line Group bus ticket has been confirmed. View your digital ticket and QR code." />
@@ -37,15 +92,15 @@ export default function TicketConfirmation() {
             <p className="text-muted-foreground">Your ticket has been booked successfully</p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card overflow-hidden">
+          <motion.div ref={ticketRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-primary/20 to-accent/10 p-6 flex items-center justify-between">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Booking ID</div>
                 <div className="font-display font-bold text-lg">{bookingId}</div>
               </div>
-              <div className="w-20 h-20 bg-secondary/80 rounded-xl flex items-center justify-center">
-                <QrCode className="w-12 h-12 text-muted-foreground" />
+              <div className="bg-white p-2 rounded-xl">
+                <QRCodeSVG value={qrData} size={72} level="M" />
               </div>
             </div>
 
@@ -115,8 +170,13 @@ export default function TicketConfirmation() {
           </motion.div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-6">
-            <button className="flex-1 glass-card px-5 py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-card transition-colors">
-              <Download className="w-4 h-4" /> Download Ticket
+            <button
+              onClick={downloadTicket}
+              disabled={downloading}
+              className="flex-1 glass-card px-5 py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-card transition-colors disabled:opacity-50"
+            >
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {downloading ? 'Generating...' : 'Download Ticket'}
             </button>
             <Link to="/manage-booking" className="flex-1 glass-card px-5 py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-card transition-colors">
               <Ticket className="w-4 h-4" /> Manage Booking
