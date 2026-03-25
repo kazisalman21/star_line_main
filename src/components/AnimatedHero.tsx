@@ -98,6 +98,8 @@ export default function AnimatedHero() {
         <div className="fog-drift" />
         {/* Bus headlight bloom */}
         <div className="headlight-bloom" />
+        {/* Road shimmer */}
+        <div className="road-shimmer" />
       </div>
 
       {/* Gradient overlays for text readability */}
