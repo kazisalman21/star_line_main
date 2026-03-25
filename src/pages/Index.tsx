@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AnimatedHero from '@/components/AnimatedHero';
 import { popularRoutes } from '@/data/mockData';
+import { getToday } from '@/lib/utils';
 
 const features = [
   { icon: Navigation, title: 'Live Tracking', desc: 'Track your coach in real-time from departure to destination' },
@@ -107,7 +108,7 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.05 }}
               >
                 <Link
-                  to={`/search?from=${encodeURIComponent(route.from)}&to=${encodeURIComponent(route.to)}&date=2026-03-25&passengers=1`}
+                  to={`/search?from=${encodeURIComponent(route.from)}&to=${encodeURIComponent(route.to)}&date=${getToday()}&passengers=1`}
                   className="glass-card p-5 block card-hover group"
                 >
                   <div className="flex items-center gap-2 mb-3">

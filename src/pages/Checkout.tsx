@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { Shield, CreditCard, Smartphone, Building2, ChevronRight, Lock } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { getToday } from '@/lib/utils';
 
 const paymentMethods = [
   { id: 'bkash', name: 'bKash', desc: 'Pay with bKash mobile wallet', icon: Smartphone, color: 'text-pink-400' },
   { id: 'nagad', name: 'Nagad', desc: 'Pay with Nagad mobile wallet', icon: Smartphone, color: 'text-orange-400' },
+  { id: 'rocket', name: 'Rocket', desc: 'Pay with Rocket mobile wallet', icon: Smartphone, color: 'text-purple-400' },
   { id: 'card', name: 'Credit/Debit Card', desc: 'Visa, Mastercard, DBBL', icon: CreditCard, color: 'text-blue-400' },
   { id: 'counter', name: 'Pay at Counter', desc: 'Reserve now, pay at boarding', icon: Building2, color: 'text-muted-foreground' },
 ];
@@ -17,7 +19,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const from = params.get('from') || 'Dhaka';
   const to = params.get('to') || 'Chattogram';
-  const date = params.get('date') || '2026-03-25';
+  const date = params.get('date') || getToday();
   const seats = params.get('seats')?.split(',') || ['A1'];
   const fare = Number(params.get('fare') || 1700);
   const coachName = params.get('coachName') || 'Starline Platinum';

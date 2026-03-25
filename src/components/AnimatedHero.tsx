@@ -18,6 +18,38 @@ const PARALLAX_LAYERS = [
   { src: layerForeground, alt: 'Road', depth: 0.02, className: 'absolute bottom-0 left-0 w-full h-[45%] object-cover object-bottom' },
 ];
 
+interface ParallaxLayerProps {
+  layer: typeof PARALLAX_LAYERS[number];
+  index: number;
+  smoothX: ReturnType<typeof useSpring>;
+  smoothY: ReturnType<typeof useSpring>;
+  loaded: boolean;
+}
+
+function ParallaxLayer({ layer, index, smoothX, smoothY, loaded }: ParallaxLayerProps) {
+  const x = useTransform(smoothX, (v) => v * layer.depth * -120);
+  const y = useTransform(smoothY, (v) => v * layer.depth * -80);
+
+  return (
+    <motion.div
+      className="absolute inset-0 will-change-transform"
+      style={{ x, y, zIndex: index }}
+      initial={{ opacity: 0, scale: 1.08 }}
+      animate={loaded ? { opacity: 1, scale: 1 } : {}}
+      transition={{ duration: 1.2, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <img
+        src={layer.src}
+        alt={layer.alt}
+        className={layer.className}
+        width={1920}
+        height={1080}
+        draggable={false}
+      />
+    </motion.div>
+  );
+}
+
 export default function AnimatedHero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
@@ -47,30 +79,16 @@ export default function AnimatedHero() {
   return (
     <section ref={containerRef} className="relative min-h-[100vh] flex items-center overflow-hidden">
       {/* Parallax Layers */}
-      {PARALLAX_LAYERS.map((layer, i) => {
-        const x = useTransform(smoothX, (v) => v * layer.depth * -120);
-        const y = useTransform(smoothY, (v) => v * layer.depth * -80);
-
-        return (
-          <motion.div
-            key={i}
-            className="absolute inset-0 will-change-transform"
-            style={{ x, y, zIndex: i }}
-            initial={{ opacity: 0, scale: 1.08 }}
-            animate={loaded ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 1.2, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <img
-              src={layer.src}
-              alt={layer.alt}
-              className={layer.className}
-              width={1920}
-              height={1080}
-              draggable={false}
-            />
-          </motion.div>
-        );
-      })}
+      {PARALLAX_LAYERS.map((layer, i) => (
+        <ParallaxLayer
+          key={i}
+          layer={layer}
+          index={i}
+          smoothX={smoothX}
+          smoothY={smoothY}
+          loaded={loaded}
+        />
+      ))}
 
       {/* Ambient Effects */}
       <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 6 }}>

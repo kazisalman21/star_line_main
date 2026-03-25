@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SearchForm from '@/components/SearchForm';
 import { generateBusResults, BusResult } from '@/data/mockData';
+import { getToday } from '@/lib/utils';
 
 const amenityIcons: Record<string, typeof Wifi> = {
   'AC': Snowflake, 'WiFi': Wifi, 'USB Charging': Zap, 'Snacks': Coffee,
@@ -16,7 +17,7 @@ export default function SearchResults() {
   const navigate = useNavigate();
   const from = params.get('from') || 'Dhaka';
   const to = params.get('to') || 'Chattogram';
-  const date = params.get('date') || '2026-03-25';
+  const date = params.get('date') || getToday();
   const passengers = Number(params.get('passengers') || 1);
 
   const [sortBy, setSortBy] = useState<'price' | 'departure' | 'duration'>('departure');

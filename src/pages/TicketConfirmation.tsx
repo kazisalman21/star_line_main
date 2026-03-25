@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Download, Headphones, QrCode, Bus, MapPin, Clock, User, CreditCard, ChevronRight, Ticket } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { getToday } from '@/lib/utils';
 
 export default function TicketConfirmation() {
   const [params] = useSearchParams();
   const bookingId = params.get('bookingId') || 'STR-2026-48291';
   const from = params.get('from') || 'Dhaka';
   const to = params.get('to') || 'Chattogram';
-  const date = params.get('date') || '2026-03-25';
+  const date = params.get('date') || getToday();
   const seats = params.get('seats')?.split(',') || ['A1', 'A2'];
   const fare = params.get('fare') || '3740';
   const coachName = params.get('coachName') || 'Starline Platinum';

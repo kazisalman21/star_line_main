@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, User, MapPin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { getToday } from '@/lib/utils';
 
 const seatLayout = [
   ['A1','','A2','A3'],
@@ -24,7 +25,7 @@ export default function SeatSelection() {
   const navigate = useNavigate();
   const from = params.get('from') || 'Dhaka';
   const to = params.get('to') || 'Chattogram';
-  const date = params.get('date') || '2026-03-25';
+  const date = params.get('date') || getToday();
   const fare = Number(params.get('fare') || 850);
   const coachName = params.get('coachName') || 'Starline Platinum';
   const coachType = params.get('coachType') || 'AC Sleeper';
@@ -39,6 +40,7 @@ export default function SeatSelection() {
   const [passengerName, setPassengerName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const toggleSeat = (seat: string) => {
     if (unavailable.includes(seat)) return;
@@ -51,9 +53,28 @@ export default function SeatSelection() {
 
   const totalFare = selected.length * fare;
 
+  const clearError = (field: string) => {
+    setErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
+  };
+
   const proceed = () => {
+    const newErrors: Record<string, string> = {};
+    if (!passengerName.trim()) newErrors.name = 'Full name is required';
+    if (!phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^(\+?880|0)1[3-9]\d{8}$/.test(phone.replace(/\s/g, ''))) {
+      newErrors.phone = 'Enter a valid BD phone number';
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Enter a valid email address';
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
     navigate(`/checkout?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}&seats=${selected.join(',')}&fare=${totalFare}&coachName=${encodeURIComponent(coachName)}&coachType=${encodeURIComponent(coachType)}&dep=${dep}&arr=${arr}&duration=${encodeURIComponent(duration)}&boarding=${encodeURIComponent(boardingPoint)}&dropping=${encodeURIComponent(droppingPoint)}&name=${encodeURIComponent(passengerName)}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`);
   };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,19 +161,22 @@ export default function SeatSelection() {
                 <h3 className="font-display font-semibold mb-4">Passenger Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Full Name</label>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Full Name *</label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input value={passengerName} onChange={e => setPassengerName(e.target.value)} placeholder="Rahim Uddin" className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                      <input value={passengerName} onChange={e => { setPassengerName(e.target.value); clearError('name'); }} placeholder="Rahim Uddin" className={`w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 ${errors.name ? 'ring-2 ring-destructive/50' : 'focus:ring-primary/50'}`} />
                     </div>
+                    {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Phone</label>
-                    <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+8801XXXXXXXXX" className="w-full bg-secondary text-foreground rounded-lg px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Phone *</label>
+                    <input value={phone} onChange={e => { setPhone(e.target.value); clearError('phone'); }} placeholder="+8801XXXXXXXXX" className={`w-full bg-secondary text-foreground rounded-lg px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 ${errors.phone ? 'ring-2 ring-destructive/50' : 'focus:ring-primary/50'}`} />
+                    {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Email</label>
-                    <input value={email} onChange={e => setEmail(e.target.value)} placeholder="rahim@email.com" className="w-full bg-secondary text-foreground rounded-lg px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input value={email} onChange={e => { setEmail(e.target.value); clearError('email'); }} placeholder="rahim@email.com" className={`w-full bg-secondary text-foreground rounded-lg px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 ${errors.email ? 'ring-2 ring-destructive/50' : 'focus:ring-primary/50'}`} />
+                    {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                   </div>
                 </div>
               </div>

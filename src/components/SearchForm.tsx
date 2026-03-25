@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Users, ArrowRightLeft, Search } from 'lucide-react';
 import { cities } from '@/data/mockData';
+import { getToday } from '@/lib/utils';
 
 interface Props {
   variant?: 'hero' | 'compact';
@@ -14,7 +15,7 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
   const navigate = useNavigate();
   const [from, setFrom] = useState(initialFrom || 'Dhaka');
   const [to, setTo] = useState(initialTo || 'Chattogram');
-  const [date, setDate] = useState(initialDate || '2026-03-25');
+  const [date, setDate] = useState(initialDate || getToday());
   const [passengers, setPassengers] = useState(1);
 
   const swap = () => { setFrom(to); setTo(from); };
