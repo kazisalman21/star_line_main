@@ -14,6 +14,7 @@ import RoutesFleet from "./pages/RoutesFleet.tsx";
 import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ErrorBoundary from "./components/ErrorBoundary.tsx";
 
 const queryClient = new QueryClient();
 
@@ -23,19 +24,21 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/seat-selection" element={<SeatSelection />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/ticket" element={<TicketConfirmation />} />
-          <Route path="/manage-booking" element={<ManageBooking />} />
-          <Route path="/live-tracking" element={<LiveTracking />} />
-          <Route path="/routes" element={<RoutesFleet />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/search" element={<SearchResults />} />
+            <Route path="/seat-selection" element={<SeatSelection />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/ticket" element={<TicketConfirmation />} />
+            <Route path="/manage-booking" element={<ManageBooking />} />
+            <Route path="/live-tracking" element={<LiveTracking />} />
+            <Route path="/routes" element={<RoutesFleet />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
