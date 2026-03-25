@@ -8,14 +8,8 @@ export default function Footer() {
       <div className="container py-14">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div>
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Bus className="w-4.5 h-4.5 text-primary-foreground" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-display font-bold text-base">Star Line</span>
-                <span className="text-[9px] font-medium text-accent tracking-[0.15em] uppercase">Group</span>
-              </div>
+            <div className="mb-5">
+              <img src={starlineLogo} alt="Star Line Group" className="h-12 w-auto" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Bangladesh's premium intercity coach service. Travel in comfort, arrive with confidence.
