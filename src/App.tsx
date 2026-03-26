@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import SearchResults from "./pages/SearchResults.tsx";
 import SeatSelection from "./pages/SeatSelection.tsx";
@@ -15,6 +17,7 @@ import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
+import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 
@@ -26,23 +29,32 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/seat-selection" element={<SeatSelection />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/ticket" element={<TicketConfirmation />} />
-            <Route path="/manage-booking" element={<ManageBooking />} />
-            <Route path="/live-tracking" element={<LiveTracking />} />
-            <Route path="/routes" element={<RoutesFleet />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ErrorBoundary>
+        <AuthProvider>
+          <ErrorBoundary>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/seat-selection" element={<SeatSelection />} />
+              <Route path="/routes" element={<RoutesFleet />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/live-tracking" element={<LiveTracking />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              {/* Protected routes — require login */}
+              <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              <Route path="/ticket" element={<ProtectedRoute><TicketConfirmation /></ProtectedRoute>} />
+              <Route path="/manage-booking" element={<ProtectedRoute><ManageBooking /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+              {/* Admin routes — require admin role */}
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

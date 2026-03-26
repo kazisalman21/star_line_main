@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
@@ -15,6 +16,7 @@ export default function Register() {
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const clearError = (field: string) => {
@@ -54,19 +56,30 @@ export default function Register() {
 
     setLoading(true);
     setError('');
-    // TODO: Wire to Supabase in Plan 2.3
-    setTimeout(() => {
-      setError('Registration will be connected in the next update.');
-      setLoading(false);
-    }, 1000);
+    setSuccess('');
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name, phone },
+      },
+    });
+    if (authError) {
+      setError(authError.message);
+    } else {
+      setSuccess('Account created! Please check your email to confirm your account.');
+    }
+    setLoading(false);
   };
 
-  const handleGoogleSSO = () => {
-    setError('Google sign-up will be connected in the next update.');
+  const handleGoogleSSO = async () => {
+    const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    if (authError) setError(authError.message);
   };
 
-  const handleFacebookSSO = () => {
-    setError('Facebook sign-up will be connected in the next update.');
+  const handleFacebookSSO = async () => {
+    const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'facebook' });
+    if (authError) setError(authError.message);
   };
 
   return (
@@ -86,6 +99,11 @@ export default function Register() {
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg px-4 py-3 mb-6">
                 {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-success/10 border border-success/20 text-success text-sm rounded-lg px-4 py-3 mb-6">
+                {success}
               </div>
             )}
 

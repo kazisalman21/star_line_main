@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
 
 export default function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = (location.state as any)?.from || '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,21 +33,23 @@ export default function Login() {
 
     setLoading(true);
     setError('');
-    // TODO: Wire to Supabase in Plan 2.3
-    setTimeout(() => {
-      setError('Login functionality will be connected in the next update.');
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError) {
+      setError(authError.message);
       setLoading(false);
-    }, 1000);
+    } else {
+      navigate(returnTo, { replace: true });
+    }
   };
 
-  const handleGoogleSSO = () => {
-    // TODO: Wire to Supabase in Plan 2.3
-    setError('Google sign-in will be connected in the next update.');
+  const handleGoogleSSO = async () => {
+    const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    if (authError) setError(authError.message);
   };
 
-  const handleFacebookSSO = () => {
-    // TODO: Wire to Supabase in Plan 2.3
-    setError('Facebook sign-in will be connected in the next update.');
+  const handleFacebookSSO = async () => {
+    const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'facebook' });
+    if (authError) setError(authError.message);
   };
 
   return (
