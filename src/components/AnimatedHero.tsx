@@ -2,7 +2,6 @@ import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Users, Star, Ticket, ChevronRight } from 'lucide-react';
-import SearchForm from '@/components/SearchForm';
 
 import layerBackground from '@/assets/flux-pro-2.0_a_stunning_illustration_of_Remove_the_bus_traveler_and_luggage_from_this_image._-0.jpg';
 import layerBus from '@/assets/Untitled (Website).png';
@@ -152,16 +151,6 @@ export default function AnimatedHero() {
 
           <div className="hidden lg:block" />
         </div>
-
-        {/* Search Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.9 }}
-          className="mt-8 lg:mt-12"
-        >
-          <SearchForm variant="hero" />
-        </motion.div>
       </div>
     </section>
   );
