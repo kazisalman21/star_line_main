@@ -13,6 +13,8 @@ import LiveTracking from "./pages/LiveTracking.tsx";
 import RoutesFleet from "./pages/RoutesFleet.tsx";
 import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import Login from "./pages/Login.tsx";
+import Register from "./pages/Register.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/routes" element={<RoutesFleet />} />
             <Route path="/support" element={<Support />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ErrorBoundary>
