@@ -7,19 +7,23 @@ import Footer from '@/components/Footer';
 import { getToday } from '@/lib/utils';
 import PageHead from '@/components/PageHead';
 
+// 2+2 layout with aisle gap (matching real Starline bus layout)
+// Each row: [left1, left2, 'aisle', right1, right2]
 const seatLayout = [
-  ['A1','','A2','A3'],
-  ['B1','','B2','B3'],
-  ['C1','','C2','C3'],
-  ['D1','','D2','D3'],
-  ['E1','','E2','E3'],
-  ['F1','','F2','F3'],
-  ['G1','','G2','G3'],
-  ['H1','H2','H3','H4','H5'],
+  ['A1', 'A2', '', 'A3', 'A4'],
+  ['B1', 'B2', '', 'B3', 'B4'],
+  ['C1', 'C2', '', 'C3', 'C4'],
+  ['D1', 'D2', '', 'D3', 'D4'],
+  ['E1', 'E2', '', 'E3', 'E4'],
+  ['F1', 'F2', '', 'F3', 'F4'],
+  ['G1', 'G2', '', 'G3', 'G4'],
+  ['H1', 'H2', '', 'H3', 'H4'],
+  ['I1', 'I2', '', 'I3', 'I4'],
+  ['J1', 'J2', 'J3', 'J4', 'J5'], // back row — 5 seats
 ];
 
-const unavailable = ['B2', 'C1', 'D3', 'F2', 'G1', 'H3'];
-const ladies = ['A2', 'A3'];
+const unavailable = ['B3', 'C1', 'D4', 'F2', 'G3', 'H1', 'I4', 'J3'];
+const ladies = ['A3', 'A4'];
 
 export default function SeatSelection() {
   const [params] = useSearchParams();
@@ -76,7 +80,6 @@ export default function SeatSelection() {
     navigate(`/checkout?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}&seats=${selected.join(',')}&fare=${totalFare}&coachName=${encodeURIComponent(coachName)}&coachType=${encodeURIComponent(coachType)}&dep=${dep}&arr=${arr}&duration=${encodeURIComponent(duration)}&boarding=${encodeURIComponent(boardingPoint)}&dropping=${encodeURIComponent(droppingPoint)}&name=${encodeURIComponent(passengerName)}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`);
   };
 
-
   return (
     <div className="min-h-screen bg-background">
       <PageHead title="Select Your Seats" description="Choose your preferred seats for your Star Line Group bus journey." />
@@ -90,46 +93,88 @@ export default function SeatSelection() {
             {/* Seat Map */}
             <div className="lg:col-span-2">
               <div className="glass-card p-6">
-                <div className="flex items-center gap-4 mb-6 text-xs">
-                  <div className="flex items-center gap-1.5"><div className="w-6 h-6 rounded-md bg-secondary border border-border" /> Available</div>
-                  <div className="flex items-center gap-1.5"><div className="w-6 h-6 rounded-md bg-primary" /> Selected</div>
-                  <div className="flex items-center gap-1.5"><div className="w-6 h-6 rounded-md bg-muted opacity-40" /> Sold</div>
-                  <div className="flex items-center gap-1.5"><div className="w-6 h-6 rounded-md bg-pink-900/30 border border-pink-700/30" /> Ladies</div>
+                {/* Legend */}
+                <div className="flex items-center gap-4 mb-6 text-xs flex-wrap">
+                  <div className="flex items-center gap-1.5"><div className="w-7 h-7 rounded-lg bg-secondary border border-border" /> Available</div>
+                  <div className="flex items-center gap-1.5"><div className="w-7 h-7 rounded-lg bg-primary" /> Selected</div>
+                  <div className="flex items-center gap-1.5"><div className="w-7 h-7 rounded-lg bg-muted opacity-40" /> Sold</div>
+                  <div className="flex items-center gap-1.5"><div className="w-7 h-7 rounded-lg bg-pink-900/30 border border-pink-700/30" /> Ladies</div>
                 </div>
 
-                <div className="bg-secondary/50 rounded-xl p-6">
-                  <div className="text-center text-xs text-muted-foreground mb-4">Front</div>
-                  <div className="flex flex-col gap-2 max-w-xs mx-auto">
-                    {seatLayout.map((row, ri) => (
-                      <div key={ri} className="flex gap-2 justify-center">
-                        {row.map((seat, si) => {
-                          if (!seat) return <div key={si} className="w-10 h-10" />;
-                          const isUnavailable = unavailable.includes(seat);
-                          const isSelected = selected.includes(seat);
-                          const isLadies = ladies.includes(seat);
-                          return (
-                            <button
-                              key={si}
-                              onClick={() => toggleSeat(seat)}
-                              disabled={isUnavailable}
-                              className={`w-10 h-10 rounded-md text-xs font-medium transition-all flex items-center justify-center ${
-                                isUnavailable
-                                  ? 'bg-muted/40 text-muted-foreground/30 cursor-not-allowed'
-                                  : isSelected
-                                  ? 'bg-primary text-primary-foreground scale-105 shadow-lg'
-                                  : isLadies
-                                  ? 'bg-pink-900/30 border border-pink-700/30 text-pink-300 hover:bg-pink-900/50'
-                                  : 'bg-secondary border border-border text-foreground hover:bg-secondary/80 hover:border-primary/50'
-                              }`}
-                            >
-                              {seat}
-                            </button>
-                          );
-                        })}
+                {/* Bus Shape Container */}
+                <div className="flex justify-center">
+                  <div className="relative w-[280px]">
+                    {/* Bus body outline */}
+                    <div className="bg-secondary/30 border-2 border-border/60 rounded-t-[60px] rounded-b-2xl overflow-hidden">
+                      {/* Front windshield / driver area — Driver on RIGHT for Bangladesh */}
+                      <div className="bg-secondary/50 border-b border-border/40 px-6 pt-8 pb-4 rounded-t-[58px]">
+                        <div className="flex items-center justify-between">
+                          <div className="w-10 h-7 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center">
+                            <span className="text-[8px] text-muted-foreground">🚪</span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">Driver</span>
+                          <div className="w-8 h-8 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
+                            <div className="w-3 h-3 rounded-full bg-muted-foreground/20" />
+                          </div>
+                        </div>
                       </div>
-                    ))}
+
+                      {/* Seat rows */}
+                      <div className="px-4 py-3 flex flex-col gap-1.5">
+                        {seatLayout.map((row, ri) => (
+                          <div key={ri} className="flex items-center justify-center gap-1">
+                            {row.map((seat, si) => {
+                              if (!seat) return (
+                                <div key={si} className="w-11 flex items-center justify-center">
+                                  <div className="w-[2px] h-8 bg-border/30 rounded-full" />
+                                </div>
+                              );
+                              const isUnavailable = unavailable.includes(seat);
+                              const isSelected = selected.includes(seat);
+                              const isLadies = ladies.includes(seat);
+                              return (
+                                <motion.button
+                                  key={si}
+                                  whileTap={{ scale: 0.92 }}
+                                  whileHover={!isUnavailable ? { scale: 1.08 } : {}}
+                                  onClick={() => toggleSeat(seat)}
+                                  disabled={isUnavailable}
+                                  className={`w-11 h-10 rounded-lg text-[10px] font-semibold transition-all flex flex-col items-center justify-center relative ${
+                                    isUnavailable
+                                      ? 'bg-muted/30 text-muted-foreground/20 cursor-not-allowed'
+                                      : isSelected
+                                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/50'
+                                      : isLadies
+                                      ? 'bg-pink-900/25 border border-pink-700/30 text-pink-300 hover:bg-pink-900/40'
+                                      : 'bg-secondary border border-border text-foreground hover:border-primary/50 hover:bg-secondary/80'
+                                  }`}
+                                >
+                                  {/* Seat back visual */}
+                                  <div className={`absolute top-0 left-1 right-1 h-[3px] rounded-t-lg ${
+                                    isUnavailable ? 'bg-muted-foreground/10' : isSelected ? 'bg-primary-foreground/30' : 'bg-border'
+                                  }`} />
+                                  <span className="mt-1">{seat}</span>
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Rear bumper */}
+                      <div className="h-3 bg-secondary/50 border-t border-border/40" />
+                    </div>
+
+                    {/* Side mirrors */}
+                    <div className="absolute -left-3 top-[52px] w-3 h-8 bg-secondary/60 border border-border/40 rounded-l-full" />
+                    <div className="absolute -right-3 top-[52px] w-3 h-8 bg-secondary/60 border border-border/40 rounded-r-full" />
+
+                    {/* Wheels */}
+                    <div className="absolute -left-2 top-[120px] w-3 h-10 bg-muted-foreground/30 rounded-full" />
+                    <div className="absolute -right-2 top-[120px] w-3 h-10 bg-muted-foreground/30 rounded-full" />
+                    <div className="absolute -left-2 bottom-[40px] w-3 h-10 bg-muted-foreground/30 rounded-full" />
+                    <div className="absolute -right-2 bottom-[40px] w-3 h-10 bg-muted-foreground/30 rounded-full" />
                   </div>
-                  <div className="text-center text-xs text-muted-foreground mt-4">Rear</div>
                 </div>
               </div>
 
