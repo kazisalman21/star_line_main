@@ -1,12 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Users, Star, Ticket, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
+import { useTheme } from 'next-themes';
 
-import heroBg from '@/assets/hero-main-theme.webp';
+import heroBgDark from '@/assets/hero-main-theme.webp';
+import heroBgLight from '@/assets/hero-day-theme.webp';
 import travelerImg from '@/assets/travler.png';
 
 export default function AnimatedHero() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   const sectionRef = useRef<HTMLElement>(null);
   const bgRef = useRef<HTMLImageElement>(null);
   const travelerRef = useRef<HTMLDivElement>(null);
@@ -18,6 +23,10 @@ export default function AnimatedHero() {
   const ctaRef = useRef<HTMLDivElement>(null);
   const trustRef = useRef<HTMLDivElement>(null);
   const ambientRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -44,12 +53,14 @@ export default function AnimatedHero() {
         '-=0.8'
       );
 
-      // Ambient effects fade in
-      tl.fromTo(ambientRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 1 },
-        '-=0.6'
-      );
+      // Ambient effects fade in (only in dark mode)
+      if (ambientRef.current) {
+        tl.fromTo(ambientRef.current,
+          { opacity: 0 },
+          { opacity: 1, duration: 1 },
+          '-=0.6'
+        );
+      }
 
       // Content stagger: badge → heading → description → CTA → trust badges
       tl.fromTo(badgeRef.current,
@@ -102,19 +113,25 @@ export default function AnimatedHero() {
     };
   }, []);
 
+  // Choose hero background based on theme
+  const heroBg = mounted ? (isDark ? heroBgDark : heroBgLight) : heroBgDark;
+
+  // Theme-aware text colors
+  const textColor = isDark ? 'text-[hsl(40,10%,92%)]' : 'text-[hsl(220,28%,12%)]';
+
   return (
     <section ref={sectionRef} className="relative min-h-[100vh] flex items-center overflow-hidden">
-      {/* Background — cinematic Ken Burns */}
+      {/* Background — swaps with theme */}
       <img
         ref={bgRef}
         src={heroBg}
-        alt="Star Line terminal at night"
-        className="absolute inset-0 w-full h-full object-cover will-change-transform"
+        alt={isDark ? 'Star Line terminal at night' : 'Star Line terminal in daylight'}
+        className="absolute inset-0 w-full h-full object-cover will-change-transform transition-none"
         style={{ opacity: 0 }}
         draggable={false}
       />
 
-      {/* Traveler overlay */}
+      {/* Traveler overlay — same in both themes */}
       <div
         ref={travelerRef}
         className="absolute bottom-0 right-[6%] z-[5] hidden md:block"
@@ -124,30 +141,41 @@ export default function AnimatedHero() {
           src={travelerImg}
           alt="Traveler checking ticket"
           className="h-[72vh] w-auto object-contain drop-shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
-          style={{ filter: 'brightness(0.82) contrast(1.12) saturate(0.85)' }}
+          style={{ filter: isDark ? 'brightness(0.82) contrast(1.12) saturate(0.85)' : 'brightness(1.05) contrast(1.05) saturate(1.0)' }}
           draggable={false}
         />
         {/* Ground contact shadow */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] h-5 bg-black/30 rounded-[50%] blur-lg" />
+        <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] h-5 rounded-[50%] blur-lg ${isDark ? 'bg-black/30' : 'bg-black/15'}`} />
       </div>
 
-      {/* Ambient Effects */}
-      <div ref={ambientRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 6, opacity: 0 }}>
-        <div className="lamppost-glow" />
-        <div className="fog-drift" />
-        <div className="headlight-bloom" />
-        <div className="road-shimmer" />
-      </div>
+      {/* Ambient Effects — only in dark mode */}
+      {isDark && (
+        <div ref={ambientRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 6, opacity: 0 }}>
+          <div className="lamppost-glow" />
+          <div className="fog-drift" />
+          <div className="headlight-bloom" />
+          <div className="road-shimmer" />
+        </div>
+      )}
 
-      {/* Gradient overlays for text readability */}
+      {/* Gradient overlays — theme-aware */}
       <div ref={overlayRef} className="absolute inset-0" style={{ zIndex: 7, opacity: 0 }}>
-        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,28%,6%)] via-[hsl(220,28%,6%,0.88)] to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,28%,6%)] via-transparent to-[hsl(220,28%,6%,0.35)]" />
+        {isDark ? (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,28%,6%)] via-[hsl(220,28%,6%,0.88)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,28%,6%)] via-transparent to-[hsl(220,28%,6%,0.35)]" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(210,20%,98%)] via-[hsl(210,20%,98%,0.85)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(210,20%,98%)] via-transparent to-[hsl(210,20%,98%,0.3)]" />
+          </>
+        )}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       {/* Content */}
-      <div ref={contentRef} className="container relative pt-28 pb-16 md:pt-32 md:pb-24 text-[hsl(40,10%,92%)]" style={{ zIndex: 8 }}>
+      <div ref={contentRef} className={`container relative pt-28 pb-16 md:pt-32 md:pb-24 ${textColor}`} style={{ zIndex: 8 }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <div ref={badgeRef} className="inline-flex items-center gap-2 bg-primary/8 border border-primary/15 rounded-full px-4 py-1.5 mb-8" style={{ opacity: 0 }}>
@@ -160,7 +188,7 @@ export default function AnimatedHero() {
               <span className="text-gradient-primary">Our Pride.</span>
             </h1>
 
-            <p ref={descRef} className="text-base md:text-lg text-muted-foreground max-w-md leading-relaxed mb-10" style={{ opacity: 0 }}>
+            <p ref={descRef} className={`text-base md:text-lg max-w-md leading-relaxed mb-10 ${isDark ? 'text-muted-foreground' : 'text-[hsl(220,15%,40%)]'}`} style={{ opacity: 0 }}>
               Book intercity bus tickets with Star Line — premium coaches, live tracking, and reliable schedules across Bangladesh.
             </p>
 
