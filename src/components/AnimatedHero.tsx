@@ -4,18 +4,14 @@ import { Link } from 'react-router-dom';
 import { Shield, Users, Star, Ticket, ChevronRight } from 'lucide-react';
 import SearchForm from '@/components/SearchForm';
 
-import layerSky from '@/assets/hero-layer-sky.png';
-import layerTerminal from '@/assets/hero-layer-terminal.png';
-import layerBus from '@/assets/hero-layer-bus.png';
-import layerTraveler from '@/assets/hero-layer-traveler.png';
-import layerForeground from '@/assets/hero-layer-foreground.png';
+import layerBackground from '@/assets/flux-pro-2.0_a_stunning_illustration_of_Remove_the_bus_traveler_and_luggage_from_this_image._-0.jpg';
+import layerBus from '@/assets/Untitled (Website).png';
+import layerTraveler from '@/assets/Untitled design (1).png';
 
 const PARALLAX_LAYERS = [
-  { src: layerSky, alt: 'Night sky', depth: 0.01, className: 'inset-0 object-cover' },
-  { src: layerTerminal, alt: 'Terminal', depth: 0.03, className: 'absolute right-0 bottom-0 h-[85%] w-auto object-contain object-right-bottom' },
-  { src: layerBus, alt: 'Starline Bus', depth: 0.05, className: 'absolute right-[8%] bottom-[8%] h-[48%] w-auto object-contain' },
-  { src: layerTraveler, alt: 'Traveler', depth: 0.06, className: 'absolute right-[32%] bottom-[6%] h-[52%] w-auto object-contain traveler-idle' },
-  { src: layerForeground, alt: 'Road', depth: 0.02, className: 'absolute bottom-0 left-0 w-full h-[45%] object-cover object-bottom' },
+  { src: layerBackground, alt: 'Terminal background', depth: 0.01, className: 'inset-0 object-cover w-full h-full' },
+  { src: layerBus, alt: 'Starline Bus', depth: 0.04, className: 'absolute left-[2%] bottom-[2%] h-[75%] w-auto object-contain' },
+  { src: layerTraveler, alt: 'Traveler', depth: 0.06, className: 'absolute right-[15%] bottom-[0%] h-[70%] w-auto object-contain traveler-idle' },
 ];
 
 interface ParallaxLayerProps {
