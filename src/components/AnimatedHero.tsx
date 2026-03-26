@@ -24,10 +24,10 @@ export default function AnimatedHero() {
       // ── Cinematic entry timeline ──
       const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-      // Background: Ken Burns zoom-in reveal
+      // Background: Ken Burns zoom-in reveal (ends at 1.1 to match scroll parallax scale)
       tl.fromTo(bgRef.current,
-        { scale: 1.2, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 2 }
+        { scale: 1.3, opacity: 0 },
+        { scale: 1.1, opacity: 1, duration: 2 }
       );
 
       // Overlay fades in
@@ -78,19 +78,27 @@ export default function AnimatedHero() {
         '-=0.2'
       );
 
-      // ── Manual scroll parallax ──
+      // ── Manual scroll parallax (starts after entry completes) ──
       const handleScroll = () => {
         if (!bgRef.current) return;
         const scrollY = window.scrollY;
         bgRef.current.style.transform = `translateY(${scrollY * 0.3}px) scale(1.1)`;
       };
-      window.addEventListener('scroll', handleScroll, { passive: true });
+
+      // Only attach scroll parallax after entry animation finishes
+      tl.call(() => {
+        window.addEventListener('scroll', handleScroll, { passive: true });
+      });
+
+      // Store reference for cleanup
+      (sectionRef.current as any).__scrollHandler = handleScroll;
 
     }, sectionRef);
 
     return () => {
       ctx.revert();
-      window.removeEventListener('scroll', () => {});
+      const handler = (sectionRef.current as any)?.__scrollHandler;
+      if (handler) window.removeEventListener('scroll', handler);
     };
   }, []);
 
@@ -101,7 +109,7 @@ export default function AnimatedHero() {
         ref={bgRef}
         src={heroBg}
         alt="Star Line terminal at night"
-        className="absolute inset-0 w-full h-full object-cover will-change-transform scale-110"
+        className="absolute inset-0 w-full h-full object-cover will-change-transform"
         style={{ opacity: 0 }}
         draggable={false}
       />
