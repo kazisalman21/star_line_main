@@ -167,8 +167,8 @@ export default function AnimatedHero() {
           </>
         ) : (
           <>
-            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(210,20%,98%)] via-[hsl(210,20%,98%,0.85)] to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(210,20%,98%)] via-transparent to-[hsl(210,20%,98%,0.3)]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-[hsl(0,0%,100%,0.92)] to-[hsl(0,0%,100%,0.1)]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-[hsl(0,0%,100%,0.4)] to-[hsl(0,0%,100%,0.5)]" />
           </>
         )}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background to-transparent" />
