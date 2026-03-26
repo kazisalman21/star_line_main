@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Shield, Users, Star, Ticket, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 
-import heroBg from '@/assets/hero-main-theme.jpg';
+import heroBg from '@/assets/hero-main-theme.webp';
 import travelerImg from '@/assets/travler.png';
 
 export default function AnimatedHero() {
