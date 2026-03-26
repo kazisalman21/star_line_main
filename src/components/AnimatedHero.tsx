@@ -140,8 +140,8 @@ export default function AnimatedHero() {
         <img
           src={travelerImg}
           alt="Traveler checking ticket"
-          className="h-[72vh] w-auto object-contain drop-shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
-          style={{ filter: isDark ? 'brightness(0.82) contrast(1.12) saturate(0.85)' : 'brightness(1.05) contrast(1.05) saturate(1.0)' }}
+          className={`h-[72vh] w-auto object-contain ${isDark ? 'drop-shadow-[0_8px_40px_rgba(0,0,0,0.6)]' : 'drop-shadow-[0_8px_30px_rgba(0,0,0,0.3)]'}`}
+          style={{ filter: isDark ? 'brightness(0.82) contrast(1.12) saturate(0.85)' : 'brightness(1.1) contrast(1.15) saturate(1.15)' }}
           draggable={false}
         />
         {/* Ground contact shadow */}
@@ -167,8 +167,8 @@ export default function AnimatedHero() {
           </>
         ) : (
           <>
-            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(0,0%,100%,0.88)] via-[hsl(0,0%,100%,0.55)] to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(0,0%,100%,0.6)] via-transparent to-[hsl(0,0%,100%,0.15)]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(0,0%,100%,0.85)] via-[hsl(0,0%,100%,0.4)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(0,0%,100%,0.5)] via-transparent to-transparent" />
           </>
         )}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background to-transparent" />
