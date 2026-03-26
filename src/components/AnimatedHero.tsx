@@ -78,9 +78,20 @@ export default function AnimatedHero() {
         '-=0.2'
       );
 
+      // ── Manual scroll parallax ──
+      const handleScroll = () => {
+        if (!bgRef.current) return;
+        const scrollY = window.scrollY;
+        bgRef.current.style.transform = `translateY(${scrollY * 0.3}px) scale(1.1)`;
+      };
+      window.addEventListener('scroll', handleScroll, { passive: true });
+
     }, sectionRef);
 
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+      window.removeEventListener('scroll', () => {});
+    };
   }, []);
 
   return (
@@ -90,7 +101,7 @@ export default function AnimatedHero() {
         ref={bgRef}
         src={heroBg}
         alt="Star Line terminal at night"
-        className="absolute inset-0 w-full h-full object-cover will-change-transform"
+        className="absolute inset-0 w-full h-full object-cover will-change-transform scale-110"
         style={{ opacity: 0 }}
         draggable={false}
       />
