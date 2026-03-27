@@ -169,9 +169,9 @@ export default function TermsOfService() {
             <p className="text-sm text-muted-foreground mb-4 max-w-lg mx-auto">
               If you have any questions or concerns regarding these Terms of Service, please don't hesitate to reach out to our legal team.
             </p>
-            <a href="mailto:legal@starline.com.bd" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
+            <a href="mailto:info@starline.com.bd" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
               <Mail className="w-4 h-4" />
-              legal@starline.com.bd
+              info@starline.com.bd
             </a>
           </motion.div>
         </div>

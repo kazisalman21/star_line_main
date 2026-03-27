@@ -86,7 +86,7 @@ const sections = [
     content: [
       'We may update this Privacy Policy periodically to reflect changes in our practices, technology, legal requirements, or regulatory obligations. Material changes will be communicated via email and/or prominent notice on the Platform.',
       'This Privacy Policy is governed by the laws of the People\'s Republic of Bangladesh, including the Digital Security Act 2018 and any applicable data protection legislation.',
-      'For any privacy-related questions, concerns, or data requests, please contact our Data Protection Officer at privacy@starline.com.bd or call our dedicated privacy helpline at 16XXX (ext. 5).',
+      'For any privacy-related questions, concerns, or data requests, please contact our Data Protection Officer at info@starline.com.bd or call us at +8801973-259609.',
     ],
   },
 ];
@@ -176,9 +176,9 @@ export default function PrivacyPolicy() {
             <p className="text-sm text-muted-foreground mb-4 max-w-lg mx-auto">
               Our Data Protection Officer is available to address any questions about how we handle your personal information.
             </p>
-            <a href="mailto:privacy@starline.com.bd" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
+            <a href="mailto:info@starline.com.bd" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
               <Mail className="w-4 h-4" />
-              privacy@starline.com.bd
+              info@starline.com.bd
             </a>
           </motion.div>
         </div>

@@ -61,8 +61,8 @@ export default function Support() {
           {/* Contact */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
             {[
-              { icon: Phone, label: 'Call Us', value: '16XXX', desc: '24/7 Hotline' },
-              { icon: Mail, label: 'Email', value: 'support@starline.com.bd', desc: 'Reply within 2 hours' },
+              { icon: Phone, label: 'Call Us', value: '+8801973-259609', desc: '24/7 Hotline' },
+              { icon: Mail, label: 'Email', value: 'info@starline.com.bd', desc: 'Reply within 2 hours' },
               { icon: MessageCircle, label: 'Live Chat', value: 'Start Chat', desc: 'Available 8AM-12AM' },
             ].map((c, i) => (
               <div key={i} className="glass-card p-5 text-center card-hover">

@@ -34,9 +34,9 @@ export default function Footer() {
           <div>
             <h4 className="font-display font-semibold text-sm mb-4 tracking-wide uppercase text-foreground/80">Contact</h4>
             <div className="flex flex-col gap-3.5 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2.5"><Phone className="w-4 h-4 text-primary" /> 16XXX (Hotline)</div>
-              <div className="flex items-center gap-2.5"><Mail className="w-4 h-4 text-primary" /> support@starline.com.bd</div>
-              <div className="flex items-center gap-2.5"><MapPin className="w-4 h-4 text-primary" /> Dhaka, Bangladesh</div>
+              <div className="flex items-center gap-2.5"><Phone className="w-4 h-4 text-primary" /> +8801973-259609</div>
+              <div className="flex items-center gap-2.5"><Mail className="w-4 h-4 text-primary" /> info@starline.com.bd</div>
+              <div className="flex items-start gap-2.5"><MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" /> Star Line Complex, 314/1, Shaheed Shahidullah Kaisar Road, Feni</div>
             </div>
           </div>
         </div>
