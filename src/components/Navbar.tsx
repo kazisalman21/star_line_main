@@ -132,7 +132,7 @@ export default function Navbar() {
           ) : (
             /* Not logged in — Login button */
             <Link
-              to="/login"
+              to="/signin"
               className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               Login

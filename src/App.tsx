@@ -39,7 +39,9 @@ const App = () => (
               <Route path="/routes" element={<RoutesFleet />} />
               <Route path="/support" element={<Support />} />
               <Route path="/live-tracking" element={<LiveTracking />} />
+              <Route path="/signin" element={<Login />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Register />} />
               <Route path="/register" element={<Register />} />
 
               {/* Protected routes — require login */}
