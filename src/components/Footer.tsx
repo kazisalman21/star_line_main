@@ -24,9 +24,9 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <h4 className="font-display font-semibold text-sm mb-4 tracking-wide uppercase text-foreground/80">Support</h4>
+            <h4 className="font-display font-semibold text-sm mb-4 tracking-wide uppercase text-foreground/80">Support & Legal</h4>
             <div className="flex flex-col gap-2.5">
-              {[['/support', 'Help Center'], ['/support', 'Cancellation Policy'], ['/support', 'Baggage Info'], ['/support', 'Contact Us']].map(([to, label], i) => (
+              {[['/support', 'Help Center'], ['/terms', 'Terms of Service'], ['/privacy', 'Privacy Policy'], ['/support', 'Contact Us']].map(([to, label], i) => (
                 <Link key={i} to={to} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
               ))}
             </div>
@@ -40,8 +40,12 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="mt-10 pt-8 border-t border-border/30 text-center text-xs text-muted-foreground">
-          © 2026 Star Line Group. All rights reserved.
+        <div className="mt-10 pt-8 border-t border-border/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <p>© 2026 Star Line Group. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </footer>

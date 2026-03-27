@@ -33,16 +33,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch profile from the profiles table
+  // Fetch profile data only (fast, no side-effects)
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (!error && data) {
+        setProfile(data as unknown as Profile);
+      }
+    } catch {
+      // Profile fetch failed — continue without profile
+    }
+  };
 
-    if (!error && data) {
-      setProfile(data);
+  // Background sync: pull Google/Facebook name+avatar into profile (non-blocking, fire-and-forget)
+  const syncOAuthMeta = async (userId: string) => {
+    try {
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      const meta = currentUser?.user_metadata;
+      if (!meta) return;
+
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', userId)
+        .single();
+      if (!existing) return;
+
+      const row = existing as unknown as { full_name: string | null; avatar_url: string | null };
+      const updates: Record<string, string> = {};
+      if (!row.full_name && (meta.full_name || meta.name)) updates.full_name = meta.full_name || meta.name;
+      if (!row.avatar_url && (meta.avatar_url || meta.picture)) updates.avatar_url = meta.avatar_url || meta.picture;
+
+      if (Object.keys(updates).length > 0) {
+        const { data: updated } = await supabase
+          .from('profiles')
+          // @ts-ignore – untyped table
+          .update(updates as any)
+          .eq('id', userId)
+          .select('*')
+          .single();
+        if (updated) setProfile(updated as unknown as Profile);
+      }
+    } catch {
+      // Silent — sync is optional
     }
   };
 
@@ -65,18 +102,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        fetchProfile(s.user.id);
+        fetchProfile(s.user.id).then(() => setLoading(false));
+        // Fire-and-forget: sync OAuth metadata in background
+        syncOAuthMeta(s.user.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, s) => {
+      (_event, s) => {
         setSession(s);
         setUser(s?.user ?? null);
         if (s?.user) {
-          await fetchProfile(s.user.id);
+          fetchProfile(s.user.id);
+          syncOAuthMeta(s.user.id);
         } else {
           setProfile(null);
         }

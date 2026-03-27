@@ -69,14 +69,14 @@ export default function Navbar() {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
               >
                 <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center overflow-hidden">
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  {(profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture) ? (
+                    <img src={profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-3.5 h-3.5 text-primary" />
                   )}
                 </div>
                 <span className="text-xs font-medium text-foreground max-w-[100px] truncate">
-                  {profile?.full_name || user.email?.split('@')[0]}
+                  {profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]}
                 </span>
               </button>
 
@@ -89,7 +89,7 @@ export default function Navbar() {
                     className="absolute right-0 top-full mt-1 w-52 bg-background border border-border rounded-xl shadow-xl overflow-hidden"
                   >
                     <div className="p-3 border-b border-border">
-                      <p className="text-sm font-medium text-foreground truncate">{profile?.full_name || 'User'}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || 'User'}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                     <div className="p-1">
@@ -99,6 +99,13 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
                       >
                         <User className="w-4 h-4 text-muted-foreground" /> Profile
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-muted-foreground" /> Dashboard
                       </Link>
                       <Link
                         to="/manage-booking"
