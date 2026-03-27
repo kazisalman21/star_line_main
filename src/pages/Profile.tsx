@@ -42,10 +42,10 @@ export default function Profile() {
     setSaving(true);
     setMessage('');
 
-    // @ts-ignore – untyped table
-    const { error } = await supabase
-      .from('profiles')
-      .update({ full_name: name, phone } as any)
+    const updateData: { full_name: string; phone: string } = { full_name: name, phone };
+    const { error } = await (supabase
+      .from('profiles') as any)
+      .update(updateData)
       .eq('id', user.id);
 
     if (error) {
