@@ -17,14 +17,14 @@
 ## Phases
 
 ### Phase 1: Frontend Polish & Bug Fixes
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Fix all bugs in the Lovable-generated prototype, improve code quality, fix the React hooks violation in AnimatedHero, remove hardcoded dates, add loading states, error boundaries, and SEO meta tags.
 **Deliverable**: A polished, bug-free frontend running on mock data.
 
 ---
 
 ### Phase 2: Supabase Backend Setup & Auth
-**Status**: ⬜ Not Started
+**Status**: 🔄 In Progress
 **Objective**: Set up Supabase project, design database schema (users, routes, buses, bookings, seats), implement authentication (email/password + Google + Facebook SSO), and create Row Level Security policies.
 **Deliverable**: Working auth flow with user registration, login, SSO, and profile page.
 

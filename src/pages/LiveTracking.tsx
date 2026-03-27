@@ -3,6 +3,7 @@ import { Bus, MapPin, Clock, CheckCircle2, AlertTriangle, Navigation, Phone, Wif
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
+import { getToday } from '@/lib/utils';
 
 const tripData = {
   bookingId: 'STR-2026-48291',
@@ -12,7 +13,7 @@ const tripData = {
   to: 'Chattogram',
   departureTime: '22:00',
   arrivalTime: '03:30',
-  date: '2026-03-25',
+  date: getToday(),
   status: 'In Transit',
   currentLocation: 'Passed Comilla — approaching Feni',
   eta: '03:15 AM',
