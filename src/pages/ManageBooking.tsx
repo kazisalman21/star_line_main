@@ -1,24 +1,62 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Ticket, XCircle, RefreshCw, Send, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Search, Ticket, XCircle, RefreshCw, Send, CheckCircle2, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { sampleBooking } from '@/data/mockData';
 import PageHead from '@/components/PageHead';
+import { getBookingDetails, cancelBooking, BookingDetails } from '@/services/bookingService';
 
 export default function ManageBooking() {
+  const navigate = useNavigate();
   const [lookupId, setLookupId] = useState('');
   const [lookupPhone, setLookupPhone] = useState('');
-  const [booking, setBooking] = useState<typeof sampleBooking | null>(null);
+  const [booking, setBooking] = useState<BookingDetails | null>(null);
+  const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
+    if (!lookupId.trim()) return;
+    setSearching(true);
     setSearched(true);
-    if (lookupId || lookupPhone) setBooking(sampleBooking);
-    else setBooking(null);
+
+    // If the user typed a PNR like "STR-XXXXXXXX", try to extract the UUID portion
+    // Otherwise treat it as a direct UUID
+    let bookingId = lookupId.trim();
+    if (bookingId.startsWith('STR-')) {
+      // PNR format: STR-<first 8 chars of UUID in uppercase>
+      // We can't reverse-lookup by PNR without a DB function, so try the raw UUID
+      // For now, let the user paste the full booking ID from their ticket
+    }
+
+    const result = await getBookingDetails(bookingId);
+
+    // Optionally verify phone matches
+    if (result && lookupPhone.trim()) {
+      if (result.passengerPhone !== lookupPhone.trim()) {
+        setBooking(null);
+        setSearching(false);
+        return;
+      }
+    }
+
+    setBooking(result);
+    setSearching(false);
   };
 
-  const statusColors = {
+  const handleCancel = async () => {
+    if (!booking) return;
+    setCancelling(true);
+    const ok = await cancelBooking(booking.id);
+    if (ok) {
+      setBooking({ ...booking, status: 'cancelled' });
+    }
+    setCancelling(false);
+  };
+
+  const statusColors: Record<string, string> = {
+    pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     confirmed: 'bg-success/10 text-success border-success/20',
     cancelled: 'bg-destructive/10 text-destructive border-destructive/20',
     completed: 'bg-info/10 text-info border-info/20',
@@ -36,20 +74,25 @@ export default function ManageBooking() {
           <div className="glass-card p-6 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Booking ID</label>
-                <input value={lookupId} onChange={e => setLookupId(e.target.value)} placeholder="STR-2026-XXXXX" className="w-full bg-secondary text-foreground rounded-lg px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Booking ID *</label>
+                <input value={lookupId} onChange={e => setLookupId(e.target.value)} placeholder="Paste your Booking ID" className="w-full bg-secondary text-foreground rounded-lg px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Phone or Email</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Phone (optional)</label>
                 <input value={lookupPhone} onChange={e => setLookupPhone(e.target.value)} placeholder="+8801XXXXXXXXX" className="w-full bg-secondary text-foreground rounded-lg px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
             </div>
-            <button onClick={handleSearch} className="mt-4 bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold text-sm hover:bg-primary/90 transition-colors btn-primary-glow flex items-center gap-2">
-              <Search className="w-4 h-4" /> Look Up Booking
+            <button
+              onClick={handleSearch}
+              disabled={searching || !lookupId.trim()}
+              className="mt-4 bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold text-sm hover:bg-primary/90 transition-colors btn-primary-glow flex items-center gap-2 disabled:opacity-40"
+            >
+              {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {searching ? 'Searching...' : 'Look Up Booking'}
             </button>
           </div>
 
-          {searched && !booking && (
+          {searched && !searching && !booking && (
             <div className="glass-card p-10 text-center">
               <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No booking found. Please check your booking ID and try again.</p>
@@ -62,9 +105,9 @@ export default function ManageBooking() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <div className="text-xs text-muted-foreground">Booking ID</div>
-                    <div className="font-display font-bold text-lg">{booking.bookingId}</div>
+                    <div className="font-display font-bold text-lg">STR-{booking.id.slice(0, 8).toUpperCase()}</div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[booking.status]}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[booking.status] || ''}`}>
                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                   </span>
                 </div>
@@ -72,19 +115,19 @@ export default function ManageBooking() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="bg-secondary/50 p-3 rounded-lg">
                     <div className="text-xs text-muted-foreground mb-1">Route</div>
-                    <div className="font-medium">{booking.from} → {booking.to}</div>
+                    <div className="font-medium">{booking.route.origin} → {booking.route.destination}</div>
                   </div>
                   <div className="bg-secondary/50 p-3 rounded-lg">
                     <div className="text-xs text-muted-foreground mb-1">Date & Time</div>
-                    <div className="font-medium">{booking.date} • {booking.departureTime}</div>
+                    <div className="font-medium">{booking.travelDate} • {booking.schedule.departureTime}</div>
                   </div>
                   <div className="bg-secondary/50 p-3 rounded-lg">
                     <div className="text-xs text-muted-foreground mb-1">Coach</div>
-                    <div className="font-medium">{booking.coachName}</div>
+                    <div className="font-medium">{booking.bus.name}</div>
                   </div>
                   <div className="bg-secondary/50 p-3 rounded-lg">
                     <div className="text-xs text-muted-foreground mb-1">Seats</div>
-                    <div className="font-medium">{booking.seats.join(', ')}</div>
+                    <div className="font-medium">{booking.seats.map(s => s.seatNumber).join(', ')}</div>
                   </div>
                   <div className="bg-secondary/50 p-3 rounded-lg">
                     <div className="text-xs text-muted-foreground mb-1">Passenger</div>
@@ -98,11 +141,21 @@ export default function ManageBooking() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button className="glass-card p-4 flex items-center justify-center gap-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors">
-                  <XCircle className="w-4 h-4" /> Cancel Booking
-                </button>
-                <button className="glass-card p-4 flex items-center justify-center gap-2 text-sm font-medium text-info hover:bg-info/5 transition-colors">
-                  <RefreshCw className="w-4 h-4" /> Reschedule
+                {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                    className="glass-card p-4 flex items-center justify-center gap-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors disabled:opacity-40"
+                  >
+                    {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                    {cancelling ? 'Cancelling...' : 'Cancel Booking'}
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate(`/ticket?bookingId=${booking.id}`)}
+                  className="glass-card p-4 flex items-center justify-center gap-2 text-sm font-medium text-foreground hover:bg-card transition-colors"
+                >
+                  <Ticket className="w-4 h-4" /> View Ticket
                 </button>
                 <button className="glass-card p-4 flex items-center justify-center gap-2 text-sm font-medium text-foreground hover:bg-card transition-colors">
                   <Send className="w-4 h-4" /> Resend Ticket
@@ -111,10 +164,19 @@ export default function ManageBooking() {
 
               {/* Refund Status */}
               <div className="glass-card p-6">
-                <h3 className="font-display font-semibold mb-3">Refund Status</h3>
+                <h3 className="font-display font-semibold mb-3">Booking Status</h3>
                 <div className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                  <span className="text-muted-foreground">No refund request pending. Booking is active.</span>
+                  {booking.status === 'cancelled' ? (
+                    <>
+                      <XCircle className="w-5 h-5 text-destructive" />
+                      <span className="text-muted-foreground">This booking has been cancelled.</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-success" />
+                      <span className="text-muted-foreground">Booking is {booking.status}. No refund request pending.</span>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

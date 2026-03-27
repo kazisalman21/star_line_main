@@ -1,48 +1,50 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Download, Headphones, Bus, MapPin, Clock, User, CreditCard, ChevronRight, Ticket, Loader2 } from 'lucide-react';
+import { CheckCircle2, Download, Headphones, Bus, MapPin, Clock, User, CreditCard, ChevronRight, Ticket, Loader2, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { getToday } from '@/lib/utils';
 import PageHead from '@/components/PageHead';
+import { getBookingDetails, BookingDetails } from '@/services/bookingService';
 
 export default function TicketConfirmation() {
   const [params] = useSearchParams();
-  const bookingId = params.get('bookingId') || 'STR-2026-48291';
-  const from = params.get('from') || 'Dhaka';
-  const to = params.get('to') || 'Chattogram';
-  const date = params.get('date') || getToday();
-  const seats = params.get('seats')?.split(',') || ['A1', 'A2'];
-  const fare = params.get('fare') || '3740';
-  const coachName = params.get('coachName') || 'Starline Platinum';
-  const dep = params.get('dep') || '22:00';
-  const arr = params.get('arr') || '03:30';
-  const boarding = params.get('boarding') || 'Dhaka Terminal';
-  const dropping = params.get('dropping') || 'Chattogram Terminal';
-  const name = params.get('name') || 'Rahim Uddin';
-  const phone = params.get('phone') || '+8801712345678';
-  const payment = params.get('payment') || 'bKash';
+  const bookingId = params.get('bookingId') || '';
+
+  const [booking, setBooking] = useState<BookingDetails | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const ticketRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
-  const qrData = JSON.stringify({
-    id: bookingId,
-    from,
-    to,
-    date,
-    dep,
-    seats: seats.join(','),
-    passenger: name,
-    fare,
-  });
+  useEffect(() => {
+    if (!bookingId) { setLoading(false); return; }
+    getBookingDetails(bookingId)
+      .then(setBooking)
+      .finally(() => setLoading(false));
+  }, [bookingId]);
+
+  // Derived values
+  const pnr = booking ? `STR-${booking.id.slice(0, 8).toUpperCase()}` : '';
+  const seatLabels = booking?.seats.map(s => s.seatNumber) || [];
+
+  const qrData = booking ? JSON.stringify({
+    id: booking.id,
+    pnr,
+    from: booking.route.origin,
+    to: booking.route.destination,
+    date: booking.travelDate,
+    dep: booking.schedule.departureTime,
+    seats: seatLabels.join(','),
+    passenger: booking.passengerName,
+    fare: booking.totalFare,
+  }) : '';
 
   const downloadTicket = async () => {
-    if (!ticketRef.current || downloading) return;
+    if (!ticketRef.current || downloading || !booking) return;
     setDownloading(true);
     try {
       const canvas = await html2canvas(ticketRef.current, {
@@ -70,13 +72,52 @@ export default function TicketConfirmation() {
       pdf.setTextColor(120, 120, 120);
       pdf.text('This is a digitally generated ticket. Valid with photo ID.', pdfW / 2, footerY, { align: 'center' });
 
-      pdf.save(`StarLine-${bookingId}.pdf`);
+      pdf.save(`StarLine-${pnr}.pdf`);
     } catch (e) {
       console.error('PDF generation failed:', e);
     } finally {
       setDownloading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-20 pb-12">
+          <div className="container max-w-2xl">
+            <div className="animate-pulse space-y-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-secondary mx-auto" />
+              <div className="h-8 bg-secondary rounded w-1/2 mx-auto" />
+              <div className="glass-card p-6 space-y-4">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-12 bg-secondary rounded-lg" />)}
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-20 pb-12">
+          <div className="container max-w-lg text-center">
+            <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h1 className="font-display text-2xl font-bold mb-2">Booking Not Found</h1>
+            <p className="text-muted-foreground mb-6">We couldn't find this booking.</p>
+            <Link to="/search" className="bg-primary text-primary-foreground rounded-lg px-6 py-3 text-sm font-semibold">
+              Search Trips
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,7 +138,7 @@ export default function TicketConfirmation() {
             <div className="bg-gradient-to-r from-primary/20 to-accent/10 p-6 flex items-center justify-between">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Booking ID</div>
-                <div className="font-display font-bold text-lg">{bookingId}</div>
+                <div className="font-display font-bold text-lg">{pnr}</div>
               </div>
               <div className="bg-white p-2 rounded-xl">
                 <QRCodeSVG value={qrData} size={72} level="M" />
@@ -108,50 +149,50 @@ export default function TicketConfirmation() {
               {/* Trip */}
               <div className="flex items-center gap-4">
                 <div className="text-center flex-1">
-                  <div className="font-display text-2xl font-bold">{dep}</div>
-                  <div className="text-sm text-muted-foreground">{from}</div>
+                  <div className="font-display text-2xl font-bold">{booking.schedule.departureTime}</div>
+                  <div className="text-sm text-muted-foreground">{booking.route.origin}</div>
                 </div>
                 <div className="flex flex-col items-center">
                   <Bus className="w-5 h-5 text-primary mb-1" />
                   <div className="w-24 h-px bg-border" />
                 </div>
                 <div className="text-center flex-1">
-                  <div className="font-display text-2xl font-bold">{arr}</div>
-                  <div className="text-sm text-muted-foreground">{to}</div>
+                  <div className="font-display text-2xl font-bold">{booking.schedule.arrivalTime}</div>
+                  <div className="text-sm text-muted-foreground">{booking.route.destination}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="bg-secondary/50 p-3 rounded-lg">
                   <div className="text-xs text-muted-foreground mb-1">Date</div>
-                  <div className="font-medium">{date}</div>
+                  <div className="font-medium">{booking.travelDate}</div>
                 </div>
                 <div className="bg-secondary/50 p-3 rounded-lg">
                   <div className="text-xs text-muted-foreground mb-1">Coach</div>
-                  <div className="font-medium">{coachName}</div>
+                  <div className="font-medium">{booking.bus.name}</div>
                 </div>
                 <div className="bg-secondary/50 p-3 rounded-lg">
                   <div className="text-xs text-muted-foreground mb-1">Seats</div>
-                  <div className="font-medium">{seats.join(', ')}</div>
+                  <div className="font-medium">{seatLabels.join(', ')}</div>
                 </div>
                 <div className="bg-secondary/50 p-3 rounded-lg">
                   <div className="text-xs text-muted-foreground mb-1">Passenger</div>
-                  <div className="font-medium">{name}</div>
+                  <div className="font-medium">{booking.passengerName}</div>
                 </div>
                 <div className="bg-secondary/50 p-3 rounded-lg">
                   <div className="text-xs text-muted-foreground mb-1">Boarding</div>
-                  <div className="font-medium">{boarding}</div>
+                  <div className="font-medium">{booking.boardingPoint}</div>
                 </div>
                 <div className="bg-secondary/50 p-3 rounded-lg">
                   <div className="text-xs text-muted-foreground mb-1">Dropping</div>
-                  <div className="font-medium">{dropping}</div>
+                  <div className="font-medium">{booking.droppingPoint}</div>
                 </div>
               </div>
 
               <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground">Total Paid ({payment})</div>
-                  <div className="font-display font-bold text-xl text-accent">৳{fare}</div>
+                  <div className="text-xs text-muted-foreground">Total Paid ({booking.payment?.method || 'N/A'})</div>
+                  <div className="font-display font-bold text-xl text-accent">৳{booking.totalFare}</div>
                 </div>
                 <CreditCard className="w-6 h-6 text-accent" />
               </div>
@@ -160,7 +201,7 @@ export default function TicketConfirmation() {
               <div className="bg-secondary/30 rounded-lg p-4 text-sm space-y-2">
                 <h4 className="font-semibold text-foreground">Boarding Instructions</h4>
                 <ul className="text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Arrive at {boarding} at least 15 minutes before departure</li>
+                  <li>Arrive at {booking.boardingPoint} at least 15 minutes before departure</li>
                   <li>Carry a valid photo ID</li>
                   <li>Show this digital ticket or QR code to the conductor</li>
                   <li>Max baggage: 2 bags (20kg each) + 1 carry-on</li>

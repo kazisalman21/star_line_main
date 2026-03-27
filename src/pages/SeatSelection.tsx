@@ -1,33 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, User, MapPin } from 'lucide-react';
+import { ChevronRight, User, MapPin, Loader2, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getToday } from '@/lib/utils';
 import PageHead from '@/components/PageHead';
-
-// 2+2 layout with aisle gap (matching real Starline bus layout)
-// Each row: [left1, left2, 'aisle', right1, right2]
-const seatLayout = [
-  ['A1', 'A2', '', 'A3', 'A4'],
-  ['B1', 'B2', '', 'B3', 'B4'],
-  ['C1', 'C2', '', 'C3', 'C4'],
-  ['D1', 'D2', '', 'D3', 'D4'],
-  ['E1', 'E2', '', 'E3', 'E4'],
-  ['F1', 'F2', '', 'F3', 'F4'],
-  ['G1', 'G2', '', 'G3', 'G4'],
-  ['H1', 'H2', '', 'H3', 'H4'],
-  ['I1', 'I2', '', 'I3', 'I4'],
-  ['J1', 'J2', 'J3', 'J4', 'J5'], // back row — 5 seats
-];
-
-const unavailable = ['B3', 'C1', 'D4', 'F2', 'G3', 'H1', 'I4', 'J3'];
-const ladies = ['A3', 'A4'];
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  getSeatAvailability, getScheduleDetails, createBooking,
+  SeatInfo,
+} from '@/services/bookingService';
 
 export default function SeatSelection() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // URL params
+  const scheduleId = params.get('scheduleId') || '';
   const from = params.get('from') || 'Dhaka';
   const to = params.get('to') || 'Chattogram';
   const date = params.get('date') || getToday();
@@ -39,30 +30,83 @@ export default function SeatSelection() {
   const duration = params.get('duration') || '5h 30m';
   const passengers = Number(params.get('passengers') || 1);
 
-  const [selected, setSelected] = useState<string[]>([]);
+  // State
+  const [seatData, setSeatData] = useState<SeatInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string[]>([]); // seat IDs
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]); // seat numbers for display
   const [boardingPoint, setBoardingPoint] = useState(`${from} Terminal`);
   const [droppingPoint, setDroppingPoint] = useState(`${to} Terminal`);
   const [passengerName, setPassengerName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState('');
 
-  const toggleSeat = (seat: string) => {
-    if (unavailable.includes(seat)) return;
-    if (selected.includes(seat)) {
-      setSelected(selected.filter(s => s !== seat));
+  // Pre-fill passenger details from auth profile
+  useEffect(() => {
+    if (user) {
+      setPassengerName(user.user_metadata?.full_name || '');
+      setPhone(user.user_metadata?.phone || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
+
+  // Fetch seat availability
+  useEffect(() => {
+    if (!scheduleId) return;
+    setLoading(true);
+    getSeatAvailability(scheduleId, date)
+      .then(({ seats }) => setSeatData(seats))
+      .finally(() => setLoading(false));
+  }, [scheduleId, date]);
+
+  // Build seat layout from live data
+  const seatLayout = useMemo(() => {
+    if (seatData.length === 0) return [];
+    // Group by row label
+    const rows: Record<string, SeatInfo[]> = {};
+    seatData.forEach(s => {
+      if (!rows[s.rowLabel]) rows[s.rowLabel] = [];
+      rows[s.rowLabel].push(s);
+    });
+
+    // Sort rows alphabetically, and seats within each row by number
+    const sortedRowLabels = Object.keys(rows).sort();
+    return sortedRowLabels.map(label => {
+      const rowSeats = rows[label].sort((a, b) => a.seatNumber.localeCompare(b.seatNumber));
+      // 2+2 layout with aisle
+      if (rowSeats.length === 4) {
+        return [rowSeats[0], rowSeats[1], null, rowSeats[2], rowSeats[3]];
+      }
+      // Back row with 5 seats (no aisle)
+      if (rowSeats.length === 5) {
+        return rowSeats;
+      }
+      // Fallback: no aisle
+      return rowSeats;
+    });
+  }, [seatData]);
+
+  const toggleSeat = (seat: SeatInfo) => {
+    if (seat.isBooked) return;
+    if (selected.includes(seat.id)) {
+      setSelected(selected.filter(id => id !== seat.id));
+      setSelectedLabels(selectedLabels.filter(l => l !== seat.seatNumber));
     } else if (selected.length < passengers) {
-      setSelected([...selected, seat]);
+      setSelected([...selected, seat.id]);
+      setSelectedLabels([...selectedLabels, seat.seatNumber]);
     }
   };
 
   const totalFare = selected.length * fare;
-
   const clearError = (field: string) => {
     setErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
   };
 
-  const proceed = () => {
+  const proceed = async () => {
+    // Validate
     const newErrors: Record<string, string> = {};
     if (!passengerName.trim()) newErrors.name = 'Full name is required';
     if (!phone.trim()) {
@@ -77,7 +121,35 @@ export default function SeatSelection() {
       setErrors(newErrors);
       return;
     }
-    navigate(`/checkout?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}&seats=${selected.join(',')}&fare=${totalFare}&coachName=${encodeURIComponent(coachName)}&coachType=${encodeURIComponent(coachType)}&dep=${dep}&arr=${arr}&duration=${encodeURIComponent(duration)}&boarding=${encodeURIComponent(boardingPoint)}&dropping=${encodeURIComponent(droppingPoint)}&name=${encodeURIComponent(passengerName)}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`);
+
+    // Auth check
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+
+    // Create booking
+    setBookingLoading(true);
+    setBookingError('');
+    const bookingId = await createBooking({
+      userId: user.id,
+      scheduleId,
+      travelDate: date,
+      seatIds: selected,
+      boarding: boardingPoint,
+      dropping: droppingPoint,
+      totalFare,
+      passengerName: passengerName.trim(),
+      passengerPhone: phone.trim(),
+      passengerEmail: email || undefined,
+    });
+
+    if (bookingId) {
+      navigate(`/checkout?bookingId=${bookingId}`);
+    } else {
+      setBookingError('Failed to create booking. Please try again.');
+    }
+    setBookingLoading(false);
   };
 
   return (
@@ -104,9 +176,8 @@ export default function SeatSelection() {
                 {/* Bus Shape Container */}
                 <div className="flex justify-center">
                   <div className="relative w-[280px]">
-                    {/* Bus body outline */}
                     <div className="bg-secondary/30 border-2 border-border/60 rounded-t-[60px] rounded-b-2xl overflow-hidden">
-                      {/* Front windshield / driver area — Driver on RIGHT for Bangladesh */}
+                      {/* Driver area */}
                       <div className="bg-secondary/50 border-b border-border/40 px-6 pt-8 pb-4 rounded-t-[58px]">
                         <div className="flex items-center justify-between">
                           <div className="w-10 h-7 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center">
@@ -121,7 +192,22 @@ export default function SeatSelection() {
 
                       {/* Seat rows */}
                       <div className="px-4 py-3 flex flex-col gap-1.5">
-                        {seatLayout.map((row, ri) => (
+                        {loading ? (
+                          // Loading skeleton
+                          Array.from({ length: 10 }).map((_, ri) => (
+                            <div key={ri} className="flex items-center justify-center gap-1">
+                              {[0,1,2,3,4].map(si => (
+                                si === 2 ? (
+                                  <div key={si} className="w-11 flex items-center justify-center">
+                                    <div className="w-[2px] h-8 bg-border/30 rounded-full" />
+                                  </div>
+                                ) : (
+                                  <div key={si} className="w-11 h-10 rounded-lg bg-secondary/50 animate-pulse" />
+                                )
+                              ))}
+                            </div>
+                          ))
+                        ) : seatLayout.map((row, ri) => (
                           <div key={ri} className="flex items-center justify-center gap-1">
                             {row.map((seat, si) => {
                               if (!seat) return (
@@ -129,18 +215,18 @@ export default function SeatSelection() {
                                   <div className="w-[2px] h-8 bg-border/30 rounded-full" />
                                 </div>
                               );
-                              const isUnavailable = unavailable.includes(seat);
-                              const isSelected = selected.includes(seat);
-                              const isLadies = ladies.includes(seat);
+                              const isBooked = seat.isBooked;
+                              const isSelected = selected.includes(seat.id);
+                              const isLadies = seat.seatType === 'ladies';
                               return (
                                 <motion.button
                                   key={si}
                                   whileTap={{ scale: 0.92 }}
-                                  whileHover={!isUnavailable ? { scale: 1.08 } : {}}
+                                  whileHover={!isBooked ? { scale: 1.08 } : {}}
                                   onClick={() => toggleSeat(seat)}
-                                  disabled={isUnavailable}
+                                  disabled={isBooked}
                                   className={`w-11 h-10 rounded-lg text-[10px] font-semibold transition-all flex flex-col items-center justify-center relative ${
-                                    isUnavailable
+                                    isBooked
                                       ? 'bg-muted/30 text-muted-foreground/20 cursor-not-allowed'
                                       : isSelected
                                       ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/50'
@@ -149,11 +235,10 @@ export default function SeatSelection() {
                                       : 'bg-secondary border border-border text-foreground hover:border-primary/50 hover:bg-secondary/80'
                                   }`}
                                 >
-                                  {/* Seat back visual */}
                                   <div className={`absolute top-0 left-1 right-1 h-[3px] rounded-t-lg ${
-                                    isUnavailable ? 'bg-muted-foreground/10' : isSelected ? 'bg-primary-foreground/30' : 'bg-border'
+                                    isBooked ? 'bg-muted-foreground/10' : isSelected ? 'bg-primary-foreground/30' : 'bg-border'
                                   }`} />
-                                  <span className="mt-1">{seat}</span>
+                                  <span className="mt-1">{seat.seatNumber}</span>
                                 </motion.button>
                               );
                             })}
@@ -161,7 +246,6 @@ export default function SeatSelection() {
                         ))}
                       </div>
 
-                      {/* Rear bumper */}
                       <div className="h-3 bg-secondary/50 border-t border-border/40" />
                     </div>
 
@@ -238,19 +322,30 @@ export default function SeatSelection() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span>{from} → {to}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span>{date}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span>{dep} - {arr}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Selected Seats</span><span>{selected.length > 0 ? selected.join(', ') : 'None'}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Selected Seats</span><span>{selectedLabels.length > 0 ? selectedLabels.join(', ') : 'None'}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Fare per seat</span><span>৳{fare}</span></div>
                   <div className="border-t border-border pt-3 flex justify-between font-bold text-lg">
                     <span>Total</span>
                     <span className="text-accent">৳{totalFare}</span>
                   </div>
                 </div>
+
+                {bookingError && (
+                  <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {bookingError}
+                  </div>
+                )}
+
                 <button
                   onClick={proceed}
-                  disabled={selected.length === 0 || !passengerName || !phone}
+                  disabled={selected.length === 0 || !passengerName || !phone || bookingLoading}
                   className="w-full mt-6 bg-primary text-primary-foreground rounded-lg py-3 font-semibold text-sm hover:bg-primary/90 transition-colors btn-primary-glow disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Proceed to Checkout <ChevronRight className="w-4 h-4" />
+                  {bookingLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Creating Booking...</>
+                  ) : (
+                    <>Proceed to Checkout <ChevronRight className="w-4 h-4" /></>
+                  )}
                 </button>
                 {selected.length === 0 && <p className="text-xs text-muted-foreground mt-2 text-center">Select at least one seat</p>}
               </div>

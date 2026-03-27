@@ -42,7 +42,7 @@ export default function SearchResults() {
   }, [results, sortBy, filterType]);
 
   const selectBus = (bus: BusResult) => {
-    navigate(`/seat-selection?busId=${bus.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}&passengers=${passengers}&fare=${bus.fare}&coachName=${encodeURIComponent(bus.coachName)}&coachType=${encodeURIComponent(bus.coachType)}&dep=${bus.departureTime}&arr=${bus.arrivalTime}&duration=${encodeURIComponent(bus.duration)}`);
+    navigate(`/seat-selection?scheduleId=${bus.scheduleId}&busId=${bus.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}&passengers=${passengers}&fare=${bus.fare}&coachName=${encodeURIComponent(bus.coachName)}&coachType=${encodeURIComponent(bus.coachType)}&dep=${bus.departureTime}&arr=${bus.arrivalTime}&duration=${encodeURIComponent(bus.duration)}`);
   };
 
   return (

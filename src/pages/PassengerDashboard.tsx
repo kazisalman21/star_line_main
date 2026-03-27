@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Ticket, MapPin, Clock, Bus, Calendar, ChevronRight, User, Phone, Mail,
   Shield, CreditCard, Star, Navigation, CheckCircle2, XCircle,
   Edit3, Download, QrCode, Headphones, Settings, Bell,
-  MapPinned, Fuel, Timer, Route, LogOut
+  MapPinned, Fuel, Timer, Route, LogOut, Loader2, Search
 } from 'lucide-react';
-import { sampleBooking } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
+import { getUserBookings, UserBooking } from '@/services/bookingService';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
@@ -21,25 +21,7 @@ const tabs = [
 
 type TabId = typeof tabs[number]['id'];
 
-/* ── Mock Data ─────────────────────────────────── */
-const mockBookings = [
-  {
-    ...sampleBooking, id: '1', bookingId: 'STR-2026-48291', status: 'confirmed' as const,
-    date: '2026-03-29', departureTime: '22:00', arrivalTime: '03:30',
-  },
-  {
-    ...sampleBooking, id: '2', bookingId: 'STR-2026-47103', status: 'completed' as const,
-    from: 'Dhaka', to: "Cox's Bazar", date: '2026-03-20', departureTime: '20:00', arrivalTime: '04:00',
-    coachType: 'AC Business', coachName: 'Starline Gold', seats: ['B3'], totalFare: 2240,
-    boardingPoint: 'Dhaka Terminal', droppingPoint: "Cox's Bazar City Center",
-  },
-  {
-    ...sampleBooking, id: '3', bookingId: 'STR-2026-45890', status: 'cancelled' as const,
-    from: 'Chattogram', to: 'Dhaka', date: '2026-03-15', departureTime: '08:00', arrivalTime: '13:30',
-    coachType: 'AC Economy', coachName: 'Starline Silver', seats: ['C2', 'C3'], totalFare: 2040,
-    boardingPoint: 'Chattogram Terminal', droppingPoint: 'Dhaka Central',
-  },
-];
+/* ── No more mock data — live from Supabase ─── */
 
 const liveTrip = {
   bookingId: 'STR-2026-48291', from: 'Dhaka', to: 'Chattogram',
@@ -57,7 +39,8 @@ const liveTrip = {
   ],
 };
 
-const statusConfig = {
+const statusConfig: Record<string, { color: string; bg: string; icon: typeof CheckCircle2; label: string }> = {
+  pending: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', icon: Clock, label: 'Pending' },
   confirmed: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', icon: CheckCircle2, label: 'Confirmed' },
   completed: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', icon: CheckCircle2, label: 'Completed' },
   cancelled: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', icon: XCircle, label: 'Cancelled' },
@@ -74,7 +57,17 @@ export default function PassengerDashboard() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>('bookings');
-  const [bookingFilter, setBookingFilter] = useState<'all' | 'confirmed' | 'completed' | 'cancelled'>('all');
+  const [bookingFilter, setBookingFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled'>('all');
+  const [bookings, setBookings] = useState<UserBooking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    setBookingsLoading(true);
+    getUserBookings(user.id)
+      .then(setBookings)
+      .finally(() => setBookingsLoading(false));
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -85,9 +78,13 @@ export default function PassengerDashboard() {
   const firstName = displayName.split(' ')[0];
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
+  const upcomingCount = bookings.filter(b => b.status === 'confirmed').length;
+  const totalTrips = bookings.length;
+  const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A';
+
   const filteredBookings = bookingFilter === 'all'
-    ? mockBookings
-    : mockBookings.filter(b => b.status === bookingFilter);
+    ? bookings
+    : bookings.filter(b => b.status === bookingFilter);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -130,10 +127,10 @@ export default function PassengerDashboard() {
           {/* Stat Cards */}
           <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }} className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
             {[
-              { label: 'Upcoming Trips', value: '1', icon: Calendar, accent: 'text-accent' },
-              { label: 'Total Trips', value: '14', icon: Route, accent: 'text-primary' },
-              { label: 'Active Tracking', value: '1', icon: Navigation, accent: 'text-emerald-400' },
-              { label: 'Member Since', value: 'Jan 2025', icon: Shield, accent: 'text-blue-400' },
+              { label: 'Upcoming Trips', value: String(upcomingCount), icon: Calendar, accent: 'text-accent' },
+              { label: 'Total Trips', value: String(totalTrips), icon: Route, accent: 'text-primary' },
+              { label: 'Active Tracking', value: '—', icon: Navigation, accent: 'text-emerald-400' },
+              { label: 'Member Since', value: memberSince, icon: Shield, accent: 'text-blue-400' },
             ].map((stat, i) => (
               <div key={i} className="p-4 rounded-2xl bg-card/60 border border-border/40 backdrop-blur-sm hover:border-border/60 transition-all">
                 <div className={`p-2 rounded-xl bg-secondary/80 ${stat.accent} w-fit mb-3`}>
@@ -182,7 +179,7 @@ export default function PassengerDashboard() {
             {activeTab === 'bookings' && (
               <motion.div key="bookings" {...fadeUp}>
                 <div className="flex gap-2 mb-5 flex-wrap">
-                  {(['all', 'confirmed', 'completed', 'cancelled'] as const).map(f => (
+                  {(['all', 'pending', 'confirmed', 'completed', 'cancelled'] as const).map(f => (
                     <button
                       key={f}
                       onClick={() => setBookingFilter(f)}
@@ -197,6 +194,31 @@ export default function PassengerDashboard() {
                   ))}
                 </div>
 
+                {bookingsLoading ? (
+                  <div className="space-y-4">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="animate-pulse rounded-2xl border border-border/40 bg-card/50 p-5">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-xl bg-secondary" />
+                          <div className="space-y-2 flex-1">
+                            <div className="h-4 bg-secondary rounded w-1/3" />
+                            <div className="h-3 bg-secondary rounded w-1/4" />
+                          </div>
+                        </div>
+                        <div className="h-16 bg-secondary rounded-xl" />
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredBookings.length === 0 ? (
+                  <div className="text-center py-16">
+                    <Search className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <h3 className="font-display font-semibold text-lg mb-1">No bookings found</h3>
+                    <p className="text-muted-foreground text-sm mb-6">Start your journey by searching for a trip</p>
+                    <Link to="/search" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                      <Search className="w-4 h-4" /> Search Trips
+                    </Link>
+                  </div>
+                ) : (
                 <div className="space-y-4">
                   {filteredBookings.map((booking, i) => {
                     const sc = statusConfig[booking.status];
@@ -210,7 +232,8 @@ export default function PassengerDashboard() {
                       >
                         <div className={`absolute top-0 left-0 w-1 h-full ${
                           booking.status === 'confirmed' ? 'bg-emerald-500' :
-                          booking.status === 'completed' ? 'bg-blue-500' : 'bg-red-500'
+                          booking.status === 'completed' ? 'bg-blue-500' :
+                          booking.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'
                         }`} />
 
                         <div className="p-5 pl-6">
@@ -283,14 +306,8 @@ export default function PassengerDashboard() {
                       </motion.div>
                     );
                   })}
-
-                  {filteredBookings.length === 0 && (
-                    <div className="text-center py-16">
-                      <Ticket className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">No {bookingFilter} bookings found</p>
-                    </div>
-                  )}
                 </div>
+                )}
               </motion.div>
             )}
 

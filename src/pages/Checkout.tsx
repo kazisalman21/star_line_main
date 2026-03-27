@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, CreditCard, Smartphone, Building2, ChevronRight, Lock } from 'lucide-react';
+import { Shield, CreditCard, Smartphone, Building2, ChevronRight, Lock, Loader2, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { getToday } from '@/lib/utils';
 import PageHead from '@/components/PageHead';
+import { getBookingDetails, confirmBooking, BookingDetails } from '@/services/bookingService';
 
 const paymentMethods = [
   { id: 'bkash', name: 'bKash', desc: 'Pay with bKash mobile wallet', icon: Smartphone, color: 'text-pink-400' },
@@ -18,30 +18,85 @@ const paymentMethods = [
 export default function Checkout() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const from = params.get('from') || 'Dhaka';
-  const to = params.get('to') || 'Chattogram';
-  const date = params.get('date') || getToday();
-  const seats = params.get('seats')?.split(',') || ['A1'];
-  const fare = Number(params.get('fare') || 1700);
-  const coachName = params.get('coachName') || 'Starline Platinum';
-  const dep = params.get('dep') || '22:00';
-  const arr = params.get('arr') || '03:30';
-  const boarding = params.get('boarding') || 'Dhaka Terminal';
-  const dropping = params.get('dropping') || 'Chattogram Terminal';
-  const name = params.get('name') || 'Rahim Uddin';
-  const phone = params.get('phone') || '+8801712345678';
-  const email = params.get('email') || 'rahim@email.com';
+  const bookingId = params.get('bookingId') || '';
 
+  const [booking, setBooking] = useState<BookingDetails | null>(null);
+  const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('bkash');
   const [agreed, setAgreed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState('');
 
-  const serviceFee = Math.round(fare * 0.03);
-  const total = fare + serviceFee;
+  useEffect(() => {
+    if (!bookingId) { setLoading(false); return; }
+    getBookingDetails(bookingId)
+      .then(setBooking)
+      .finally(() => setLoading(false));
+  }, [bookingId]);
 
-  const confirmBooking = () => {
-    const bookingId = `STR-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    navigate(`/ticket?bookingId=${bookingId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}&seats=${seats.join(',')}&fare=${total}&coachName=${encodeURIComponent(coachName)}&dep=${dep}&arr=${arr}&boarding=${encodeURIComponent(boarding)}&dropping=${encodeURIComponent(dropping)}&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}&payment=${paymentMethod}`);
+  const serviceFee = booking ? Math.round(booking.totalFare * 0.03) : 0;
+  const total = booking ? booking.totalFare + serviceFee : 0;
+
+  const handleConfirm = async () => {
+    if (!booking) return;
+    setConfirming(true);
+    setError('');
+    const ok = await confirmBooking(bookingId, paymentMethod);
+    if (ok) {
+      navigate(`/ticket?bookingId=${bookingId}`);
+    } else {
+      setError('Payment failed. Please try again.');
+    }
+    setConfirming(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-20 pb-12">
+          <div className="container max-w-4xl">
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 bg-secondary rounded w-1/3" />
+              <div className="h-4 bg-secondary rounded w-1/4" />
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div className="lg:col-span-3 space-y-6">
+                  <div className="glass-card p-6 space-y-3">
+                    {[1,2,3,4,5].map(i => <div key={i} className="h-16 bg-secondary rounded-xl" />)}
+                  </div>
+                </div>
+                <div className="lg:col-span-2">
+                  <div className="glass-card p-6 space-y-3">
+                    {[1,2,3,4,5].map(i => <div key={i} className="h-5 bg-secondary rounded" />)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-20 pb-12">
+          <div className="container max-w-lg text-center">
+            <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h1 className="font-display text-2xl font-bold mb-2">Booking Not Found</h1>
+            <p className="text-muted-foreground mb-6">We couldn't find this booking. It may have expired.</p>
+            <button onClick={() => navigate('/search')} className="bg-primary text-primary-foreground rounded-lg px-6 py-3 text-sm font-semibold">
+              Search Trips
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,7 +105,7 @@ export default function Checkout() {
       <div className="pt-20 pb-12">
         <div className="container max-w-4xl">
           <h1 className="font-display text-2xl font-bold mb-2">Secure Checkout</h1>
-          <p className="text-muted-foreground text-sm mb-8">Complete your booking for {from} → {to}</p>
+          <p className="text-muted-foreground text-sm mb-8">Complete your booking for {booking.route.origin} → {booking.route.destination}</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <div className="lg:col-span-3 space-y-6">
@@ -101,16 +156,16 @@ export default function Checkout() {
               <div className="glass-card-accent p-6 sticky top-24">
                 <h3 className="font-display font-semibold mb-4">Booking Summary</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Passenger</span><span>{name}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span>{from} → {to}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span>{date}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span>{dep} - {arr}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Coach</span><span>{coachName}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Seats</span><span>{seats.join(', ')}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Boarding</span><span className="text-right text-xs">{boarding}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Dropping</span><span className="text-right text-xs">{dropping}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Passenger</span><span>{booking.passengerName}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span>{booking.route.origin} → {booking.route.destination}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span>{booking.travelDate}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span>{booking.schedule.departureTime} - {booking.schedule.arrivalTime}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Coach</span><span>{booking.bus.name}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Seats</span><span>{booking.seats.map(s => s.seatNumber).join(', ')}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Boarding</span><span className="text-right text-xs">{booking.boardingPoint}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Dropping</span><span className="text-right text-xs">{booking.droppingPoint}</span></div>
                   <div className="border-t border-border pt-3">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Ticket fare</span><span>৳{fare}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Ticket fare</span><span>৳{booking.totalFare}</span></div>
                     <div className="flex justify-between mt-1"><span className="text-muted-foreground">Service fee</span><span>৳{serviceFee}</span></div>
                   </div>
                   <div className="border-t border-border pt-3 flex justify-between font-bold text-lg">
@@ -118,13 +173,22 @@ export default function Checkout() {
                   </div>
                 </div>
 
+                {error && (
+                  <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                  </div>
+                )}
+
                 <button
-                  onClick={confirmBooking}
-                  disabled={!agreed}
+                  onClick={handleConfirm}
+                  disabled={!agreed || confirming}
                   className="w-full mt-6 bg-primary text-primary-foreground rounded-lg py-3 font-semibold text-sm hover:bg-primary/90 transition-colors btn-primary-glow disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <Lock className="w-4 h-4" />
-                  Confirm & Pay ৳{total}
+                  {confirming ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                  ) : (
+                    <><Lock className="w-4 h-4" /> Confirm & Pay ৳{total}</>
+                  )}
                 </button>
 
                 <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
