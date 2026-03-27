@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, MapPin, Users, Wifi, Snowflake, Zap, ChevronRight, Filter, ArrowUpDown, Coffee } from 'lucide-react';
+import { Clock, MapPin, Users, Wifi, Snowflake, Zap, ChevronRight, Filter, ArrowUpDown, Coffee, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SearchForm from '@/components/SearchForm';
-import { generateBusResults, BusResult } from '@/data/mockData';
+import { searchTrips, BusResult } from '@/services/routeService';
 import { getToday } from '@/lib/utils';
 import SearchResultsSkeleton from '@/components/SearchResultsSkeleton';
 import PageHead from '@/components/PageHead';
@@ -25,14 +25,14 @@ export default function SearchResults() {
   const [sortBy, setSortBy] = useState<'price' | 'departure' | 'duration'>('departure');
   const [filterType, setFilterType] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [results, setResults] = useState<BusResult[]>([]);
 
   useEffect(() => {
     setLoading(true);
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
+    searchTrips(from, to, date)
+      .then(setResults)
+      .finally(() => setLoading(false));
   }, [from, to, date]);
-
-  const results = useMemo(() => generateBusResults(from, to, date), [from, to, date]);
 
   const filtered = useMemo(() => {
     let r = filterType === 'all' ? results : results.filter(b => b.coachType === filterType);
@@ -81,6 +81,14 @@ export default function SearchResults() {
 
           {loading ? (
             <SearchResultsSkeleton />
+          ) : filtered.length === 0 ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-12 text-center">
+              <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-display text-xl font-bold mb-2">No trips found</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                We couldn't find any available trips from <span className="text-foreground font-medium">{from}</span> to <span className="text-foreground font-medium">{to}</span> on {date}. Try a different date or route.
+              </p>
+            </motion.div>
           ) : (
             <div className="flex flex-col gap-4">
               {filtered.map((bus, i) => (

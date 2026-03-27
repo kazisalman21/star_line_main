@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Users, ArrowRightLeft, Search } from 'lucide-react';
-import { cities } from '@/data/mockData';
+import { getCities } from '@/services/routeService';
 import { getToday } from '@/lib/utils';
 
 interface Props {
@@ -11,12 +11,19 @@ interface Props {
   initialDate?: string;
 }
 
+const fallbackCities = ['Dhaka', 'Chattogram', "Cox's Bazar", 'Sylhet', 'Rajshahi', 'Khulna', 'Feni', 'Comilla'];
+
 export default function SearchForm({ variant = 'hero', initialFrom = '', initialTo = '', initialDate = '' }: Props) {
   const navigate = useNavigate();
   const [from, setFrom] = useState(initialFrom || 'Dhaka');
   const [to, setTo] = useState(initialTo || 'Chattogram');
   const [date, setDate] = useState(initialDate || getToday());
   const [passengers, setPassengers] = useState(1);
+  const [cities, setCities] = useState<string[]>(fallbackCities);
+
+  useEffect(() => {
+    getCities().then(c => { if (c.length > 0) setCities(c); });
+  }, []);
 
   const swap = () => { setFrom(to); setTo(from); };
 

@@ -1,10 +1,11 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Shield, Clock, MapPin, CreditCard, ChevronRight, Bus, Navigation, Ticket } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AnimatedHero from '@/components/AnimatedHero';
-import { popularRoutes } from '@/data/mockData';
+import { getPopularRoutes, PopularRoute } from '@/services/routeService';
 import { getToday } from '@/lib/utils';
 import PageHead from '@/components/PageHead';
 
@@ -25,6 +26,14 @@ const trustItems = [
 ];
 
 export default function LandingPage() {
+  const [routes, setRoutes] = useState<PopularRoute[]>([]);
+  const [routesLoading, setRoutesLoading] = useState(true);
+
+  useEffect(() => {
+    getPopularRoutes()
+      .then(setRoutes)
+      .finally(() => setRoutesLoading(false));
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <PageHead title="Book Intercity Bus Tickets" description="Book premium intercity bus tickets with Star Line Group — Bangladesh's trusted bus service. AC Sleeper, Business & Economy coaches." />
@@ -101,7 +110,17 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {popularRoutes.slice(0, 8).map((route, i) => (
+            {routesLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="glass-card p-5 animate-pulse">
+                  <div className="h-5 bg-secondary rounded w-3/4 mb-3" />
+                  <div className="flex justify-between">
+                    <div className="h-4 bg-secondary rounded w-1/3" />
+                    <div className="h-4 bg-secondary rounded w-1/4" />
+                  </div>
+                </div>
+              ))
+            ) : routes.slice(0, 8).map((route, i) => (
               <motion.div
                 key={route.id}
                 initial={{ opacity: 0, y: 15 }}

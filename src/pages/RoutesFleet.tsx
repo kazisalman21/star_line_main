@@ -1,9 +1,10 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Shield, Snowflake, Wifi, Zap, Coffee, Users, Armchair, Star, Bus } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { popularRoutes, coachTypes } from '@/data/mockData';
+import { getPopularRoutes, getBusTypes, PopularRoute } from '@/services/routeService';
 import PageHead from '@/components/PageHead';
 import { getToday } from '@/lib/utils';
 
@@ -21,6 +22,16 @@ const amenityMap: Record<string, typeof Wifi> = {
 };
 
 export default function RoutesFleet() {
+  const [routes, setRoutes] = useState<PopularRoute[]>([]);
+  const [coachTypes, setCoachTypes] = useState<{ name: string; type: string; seats: number; amenities: string[] }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getPopularRoutes(), getBusTypes()])
+      .then(([r, b]) => { setRoutes(r); setCoachTypes(b); })
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <PageHead title="Routes & Fleet" description="Explore Star Line Group's intercity bus routes across Bangladesh and our premium coach fleet." />
@@ -34,7 +45,15 @@ export default function RoutesFleet() {
           <section className="mb-16">
             <h2 className="font-display text-2xl font-bold mb-6">Popular Routes</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {popularRoutes.map((route, i) => (
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="glass-card p-5 animate-pulse">
+                    <div className="h-5 bg-secondary rounded w-3/4 mb-3" />
+                    <div className="h-4 bg-secondary rounded w-full mb-2" />
+                    <div className="h-1.5 bg-secondary rounded w-full" />
+                  </div>
+                ))
+              ) : routes.map((route, i) => (
                 <motion.div
                   key={route.id}
                   initial={{ opacity: 0, y: 10 }}
