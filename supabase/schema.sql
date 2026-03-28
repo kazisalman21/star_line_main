@@ -298,3 +298,41 @@ CREATE INDEX idx_bookings_travel_date ON bookings(travel_date);
 CREATE INDEX idx_booking_seats_booking ON booking_seats(booking_id);
 CREATE INDEX idx_booking_seats_seat ON booking_seats(seat_id);
 CREATE INDEX idx_payments_booking ON payments(booking_id);
+
+-- ============================================================
+-- 9. TRIP_TRACKING — live bus position tracking
+-- ============================================================
+CREATE TABLE trip_tracking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  schedule_id UUID NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
+  travel_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  current_stop TEXT NOT NULL DEFAULT '',
+  next_stop TEXT,
+  stops_completed INTEGER NOT NULL DEFAULT 0,
+  total_stops INTEGER NOT NULL DEFAULT 6,
+  progress_percent INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','boarding','in_transit','delayed','arrived','cancelled')),
+  eta TEXT,
+  last_updated TIMESTAMPTZ NOT NULL DEFAULT now(),
+  notes TEXT,
+  UNIQUE(schedule_id, travel_date)
+);
+
+-- Enable Supabase Realtime for trip_tracking
+ALTER PUBLICATION supabase_realtime ADD TABLE trip_tracking;
+
+-- RLS for trip_tracking
+ALTER TABLE trip_tracking ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view trip tracking"
+  ON trip_tracking FOR SELECT
+  USING (true);
+
+CREATE POLICY "Admins can manage trip tracking"
+  ON trip_tracking FOR ALL
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+CREATE INDEX idx_trip_tracking_schedule ON trip_tracking(schedule_id);
+CREATE INDEX idx_trip_tracking_date ON trip_tracking(travel_date);

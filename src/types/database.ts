@@ -317,12 +317,65 @@ export interface Database {
           paid_at?: string | null;
           created_at?: string;
         };
-        Relationships: [
+         Relationships: [
           {
             foreignKeyName: 'payments_booking_id_fkey';
             columns: ['booking_id'];
             isOneToOne: false;
             referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      trip_tracking: {
+        Row: {
+          id: string;
+          schedule_id: string;
+          travel_date: string;
+          current_stop: string;
+          next_stop: string | null;
+          stops_completed: number;
+          total_stops: number;
+          progress_percent: number;
+          status: 'scheduled' | 'boarding' | 'in_transit' | 'delayed' | 'arrived' | 'cancelled';
+          eta: string | null;
+          last_updated: string;
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          schedule_id: string;
+          travel_date?: string;
+          current_stop?: string;
+          next_stop?: string | null;
+          stops_completed?: number;
+          total_stops?: number;
+          progress_percent?: number;
+          status?: 'scheduled' | 'boarding' | 'in_transit' | 'delayed' | 'arrived' | 'cancelled';
+          eta?: string | null;
+          last_updated?: string;
+          notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          schedule_id?: string;
+          travel_date?: string;
+          current_stop?: string;
+          next_stop?: string | null;
+          stops_completed?: number;
+          total_stops?: number;
+          progress_percent?: number;
+          status?: 'scheduled' | 'boarding' | 'in_transit' | 'delayed' | 'arrived' | 'cancelled';
+          eta?: string | null;
+          last_updated?: string;
+          notes?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'trip_tracking_schedule_id_fkey';
+            columns: ['schedule_id'];
+            isOneToOne: false;
+            referencedRelation: 'schedules';
             referencedColumns: ['id'];
           },
         ];
@@ -340,6 +393,7 @@ export interface Database {
       booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
       payment_method: 'bkash' | 'nagad' | 'rocket' | 'card';
       payment_status: 'pending' | 'success' | 'failed';
+      trip_status: 'scheduled' | 'boarding' | 'in_transit' | 'delayed' | 'arrived' | 'cancelled';
     };
   };
 }
@@ -353,3 +407,4 @@ export type Seat = Database['public']['Tables']['seats']['Row'];
 export type Booking = Database['public']['Tables']['bookings']['Row'];
 export type BookingSeat = Database['public']['Tables']['booking_seats']['Row'];
 export type Payment = Database['public']['Tables']['payments']['Row'];
+export type TripTracking = Database['public']['Tables']['trip_tracking']['Row'];
