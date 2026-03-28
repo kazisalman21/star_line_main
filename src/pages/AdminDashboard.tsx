@@ -350,7 +350,7 @@ function OverviewTab() {
 }
 
 // ═══════════════════════════════════════════════════
-// ROUTES & FLEET TAB
+// ROUTES & FLEET TAB — with CREATE forms
 // ═══════════════════════════════════════════════════
 function RoutesFleetTab() {
   const [routes, setRoutes] = useState<any[]>([]);
@@ -358,12 +358,49 @@ function RoutesFleetTab() {
   const [schedules, setSchedules] = useState<any[]>([]);
   const [fleet, setFleet] = useState<FleetStatus>({ active: 0, maintenance: 0, retired: 0, total: 0 });
   const [loading, setLoading] = useState(true);
-  const [section, setSection] = useState<'routes' | 'fleet' | 'schedules'>('routes');
+  const [section, setSection] = useState<'routes' | 'fleet' | 'schedules' | 'counters'>('routes');
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Route form
+  const [routeForm, setRouteForm] = useState({ origin: '', destination: '', distance_km: '', duration_minutes: '', base_fare: '' });
+  // Bus form
+  const [busForm, setBusForm] = useState({ name: '', type: 'AC' as 'AC' | 'Non-AC' | 'Sleeper', total_seats: '41', registration_number: '' });
+  // Schedule form
+  const [scheduleForm, setScheduleForm] = useState({ route_id: '', bus_id: '', departure_time: '', arrival_time: '', days_of_week: [0,1,2,3,4,5,6] as number[], fare_override: '' });
+
+  // Counter management
+  const [terminals, setTerminals] = useState<any[]>([]);
+  const [counters, setCounters] = useState<any[]>([]);
+  const [selectedRouteForCounters, setSelectedRouteForCounters] = useState('');
+  const [showCounterForm, setShowCounterForm] = useState(false);
+  const [counterForm, setCounterForm] = useState({ name: '', location: '', district: '', phone: '', counter_type: 'Counter' as 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop', status: 'Active' as 'Active' | 'Unverified' | 'Unconfirmed', sort_order: '0' });
+  const [showTerminalForm, setShowTerminalForm] = useState(false);
+  const [terminalForm, setTerminalForm] = useState({ name: '', short_name: '', location: '', district: '', phone: '', is_main_terminal: false });
+
+  const reload = async () => {
+    setLoading(true);
+    const [r, b, s, f] = await Promise.all([getAllRoutes(), getAllBuses(), getAllSchedules(), getFleetStatus()]);
+    setRoutes(r); setBuses(b); setSchedules(s); setFleet(f);
+    setLoading(false);
+  };
+
+  useEffect(() => { reload(); }, []);
+
+  // Load counters
+  useEffect(() => {
+    import('@/services/counterService').then(mod => {
+      mod.getAllTerminals().then(setTerminals);
+    });
+  }, []);
 
   useEffect(() => {
-    Promise.all([getAllRoutes(), getAllBuses(), getAllSchedules(), getFleetStatus()])
-      .then(([r, b, s, f]) => { setRoutes(r); setBuses(b); setSchedules(s); setFleet(f); setLoading(false); });
-  }, []);
+    if (selectedRouteForCounters) {
+      import('@/services/counterService').then(mod => {
+        mod.getAllRouteCounters(selectedRouteForCounters).then(setCounters);
+      });
+    }
+  }, [selectedRouteForCounters]);
 
   const handleDeleteRoute = async (id: string) => {
     if (!confirm('Delete this route?')) return;
@@ -389,9 +426,113 @@ function RoutesFleetTab() {
     setRoutes(routes.map(r => r.id === id ? { ...r, status: newStatus } : r));
   };
 
+  const handleCreateRoute = async () => {
+    if (!routeForm.origin || !routeForm.destination) return;
+    setSaving(true);
+    const { data } = await createRoute({
+      origin: routeForm.origin.trim(),
+      destination: routeForm.destination.trim(),
+      distance_km: parseInt(routeForm.distance_km) || 0,
+      duration_minutes: parseInt(routeForm.duration_minutes) || 0,
+      base_fare: parseInt(routeForm.base_fare) || 0,
+    });
+    if (data) setRoutes([data, ...routes]);
+    setRouteForm({ origin: '', destination: '', distance_km: '', duration_minutes: '', base_fare: '' });
+    setShowForm(false);
+    setSaving(false);
+  };
+
+  const handleCreateBus = async () => {
+    if (!busForm.name || !busForm.registration_number) return;
+    setSaving(true);
+    const { data } = await createBus({
+      name: busForm.name.trim(),
+      type: busForm.type,
+      total_seats: parseInt(busForm.total_seats) || 41,
+      registration_number: busForm.registration_number.trim(),
+    });
+    if (data) setBuses([data, ...buses]);
+    setBusForm({ name: '', type: 'AC', total_seats: '41', registration_number: '' });
+    setShowForm(false);
+    setSaving(false);
+  };
+
+  const handleCreateSchedule = async () => {
+    if (!scheduleForm.route_id || !scheduleForm.bus_id || !scheduleForm.departure_time) return;
+    setSaving(true);
+    const payload: any = {
+      route_id: scheduleForm.route_id,
+      bus_id: scheduleForm.bus_id,
+      departure_time: scheduleForm.departure_time,
+      arrival_time: scheduleForm.arrival_time || scheduleForm.departure_time,
+      days_of_week: scheduleForm.days_of_week,
+    };
+    if (scheduleForm.fare_override) payload.fare_override = parseInt(scheduleForm.fare_override);
+    const { data } = await createSchedule(payload);
+    if (data) await reload();
+    setScheduleForm({ route_id: '', bus_id: '', departure_time: '', arrival_time: '', days_of_week: [0,1,2,3,4,5,6], fare_override: '' });
+    setShowForm(false);
+    setSaving(false);
+  };
+
+  const handleCreateTerminal = async () => {
+    if (!terminalForm.name || !terminalForm.short_name) return;
+    setSaving(true);
+    const mod = await import('@/services/counterService');
+    const { data } = await mod.createTerminal({
+      name: terminalForm.name.trim(),
+      short_name: terminalForm.short_name.trim(),
+      location: terminalForm.location.trim(),
+      district: terminalForm.district.trim(),
+      phone: terminalForm.phone.trim() || '—',
+      is_main_terminal: terminalForm.is_main_terminal,
+    });
+    if (data) setTerminals([...terminals, data]);
+    setTerminalForm({ name: '', short_name: '', location: '', district: '', phone: '', is_main_terminal: false });
+    setShowTerminalForm(false);
+    setSaving(false);
+  };
+
+  const handleCreateCounter = async () => {
+    if (!counterForm.name || !selectedRouteForCounters) return;
+    setSaving(true);
+    const mod = await import('@/services/counterService');
+    const { data } = await mod.createRouteCounter({
+      route_id: selectedRouteForCounters,
+      name: counterForm.name.trim(),
+      location: counterForm.location.trim(),
+      district: counterForm.district.trim(),
+      phone: counterForm.phone.trim() || '—',
+      counter_type: counterForm.counter_type,
+      status: counterForm.status,
+      sort_order: parseInt(counterForm.sort_order) || 0,
+    });
+    if (data) setCounters([...counters, data]);
+    setCounterForm({ name: '', location: '', district: '', phone: '', counter_type: 'Counter', status: 'Active', sort_order: '0' });
+    setShowCounterForm(false);
+    setSaving(false);
+  };
+
+  const handleDeleteTerminal = async (id: string) => {
+    if (!confirm('Delete this terminal?')) return;
+    const mod = await import('@/services/counterService');
+    await mod.deleteTerminal(id);
+    setTerminals(terminals.filter(t => t.id !== id));
+  };
+
+  const handleDeleteCounter = async (id: string) => {
+    if (!confirm('Delete this counter stop?')) return;
+    const mod = await import('@/services/counterService');
+    await mod.deleteRouteCounter(id);
+    setCounters(counters.filter(c => c.id !== id));
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
+
+  const inputCls = "w-full px-3 py-2 rounded-lg bg-secondary/60 border border-border/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+  const selectCls = "w-full px-3 py-2 rounded-lg bg-secondary/60 border border-border/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none";
 
   return (
     <div className="space-y-6">
@@ -412,122 +553,386 @@ function RoutesFleetTab() {
       </div>
 
       {/* Section Tabs */}
-      <div className="flex gap-2">
-        {(['routes', 'fleet', 'schedules'] as const).map(s => (
-          <button key={s} onClick={() => setSection(s)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${section === s ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-            {s === 'routes' ? `Routes (${routes.length})` : s === 'fleet' ? `Buses (${buses.length})` : `Schedules (${schedules.length})`}
+      <div className="flex gap-2 flex-wrap">
+        {(['routes', 'fleet', 'schedules', 'counters'] as const).map(s => (
+          <button key={s} onClick={() => { setSection(s); setShowForm(false); }} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${section === s ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+            {s === 'routes' ? `Routes (${routes.length})` : s === 'fleet' ? `Buses (${buses.length})` : s === 'schedules' ? `Schedules (${schedules.length})` : `Counters`}
           </button>
         ))}
       </div>
 
-      {/* Routes Table */}
+      {/* ─── ROUTES ─── */}
       {section === 'routes' && (
-        <div className="glass-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/30">
-                  <th className="text-left p-3 font-medium text-muted-foreground">Route</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Distance</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Duration</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Base Fare</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {routes.map(r => (
-                  <tr key={r.id} className="border-b border-border/10 hover:bg-secondary/20 transition-colors">
-                    <td className="p-3 font-medium">{r.origin} → {r.destination}</td>
-                    <td className="p-3 text-muted-foreground">{r.distance_km} km</td>
-                    <td className="p-3 text-muted-foreground">{Math.floor(r.duration_minutes / 60)}h {r.duration_minutes % 60}m</td>
-                    <td className="p-3">৳{r.base_fare}</td>
-                    <td className="p-3">
-                      <button onClick={() => handleToggleRouteStatus(r.id, r.status)} className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || ''}`}>
-                        {r.status}
-                      </button>
-                    </td>
-                    <td className="p-3 text-right">
-                      <button onClick={() => handleDeleteRoute(r.id)} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-                    </td>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Manage Routes</h3>
+            <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add Route
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showForm && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="glass-card p-5 space-y-3">
+                <h4 className="text-sm font-semibold">New Route</h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <input placeholder="Origin" value={routeForm.origin} onChange={e => setRouteForm({ ...routeForm, origin: e.target.value })} className={inputCls} />
+                  <input placeholder="Destination" value={routeForm.destination} onChange={e => setRouteForm({ ...routeForm, destination: e.target.value })} className={inputCls} />
+                  <input placeholder="Distance (km)" type="number" value={routeForm.distance_km} onChange={e => setRouteForm({ ...routeForm, distance_km: e.target.value })} className={inputCls} />
+                  <input placeholder="Duration (min)" type="number" value={routeForm.duration_minutes} onChange={e => setRouteForm({ ...routeForm, duration_minutes: e.target.value })} className={inputCls} />
+                  <input placeholder="Base Fare (৳)" type="number" value={routeForm.base_fare} onChange={e => setRouteForm({ ...routeForm, base_fare: e.target.value })} className={inputCls} />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground">Cancel</button>
+                  <button onClick={handleCreateRoute} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50">
+                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Create
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="glass-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30">
+                    <th className="text-left p-3 font-medium text-muted-foreground">Route</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Distance</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Duration</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Base Fare</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                    <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {routes.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">No routes configured</p>}
+                </thead>
+                <tbody>
+                  {routes.map(r => (
+                    <tr key={r.id} className="border-b border-border/10 hover:bg-secondary/20 transition-colors">
+                      <td className="p-3 font-medium">{r.origin} → {r.destination}</td>
+                      <td className="p-3 text-muted-foreground">{r.distance_km} km</td>
+                      <td className="p-3 text-muted-foreground">{Math.floor(r.duration_minutes / 60)}h {r.duration_minutes % 60}m</td>
+                      <td className="p-3">৳{r.base_fare}</td>
+                      <td className="p-3">
+                        <button onClick={() => handleToggleRouteStatus(r.id, r.status)} className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || ''}`}>
+                          {r.status}
+                        </button>
+                      </td>
+                      <td className="p-3 text-right">
+                        <button onClick={() => handleDeleteRoute(r.id)} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {routes.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">No routes configured — click "Add Route" to create one</p>}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Fleet Grid */}
+      {/* ─── FLEET ─── */}
       {section === 'fleet' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {buses.map(b => (
-            <div key={b.id} className="glass-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="font-display font-semibold">{b.name}</div>
-                <button onClick={() => handleToggleBusStatus(b.id, b.status)} className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[b.status] || ''}`}>
-                  {b.status}
-                </button>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Manage Fleet</h3>
+            <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add Bus
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showForm && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="glass-card p-5 space-y-3">
+                <h4 className="text-sm font-semibold">New Bus</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <input placeholder="Bus Name (e.g. SL-101)" value={busForm.name} onChange={e => setBusForm({ ...busForm, name: e.target.value })} className={inputCls} />
+                  <select value={busForm.type} onChange={e => setBusForm({ ...busForm, type: e.target.value as any })} className={selectCls}>
+                    <option value="AC">AC</option>
+                    <option value="Non-AC">Non-AC</option>
+                    <option value="Sleeper">Sleeper</option>
+                  </select>
+                  <input placeholder="Total Seats" type="number" value={busForm.total_seats} onChange={e => setBusForm({ ...busForm, total_seats: e.target.value })} className={inputCls} />
+                  <input placeholder="Registration Number" value={busForm.registration_number} onChange={e => setBusForm({ ...busForm, registration_number: e.target.value })} className={inputCls} />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground">Cancel</button>
+                  <button onClick={handleCreateBus} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50">
+                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Create
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {buses.map(b => (
+              <div key={b.id} className="glass-card p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-display font-semibold">{b.name}</div>
+                  <button onClick={() => handleToggleBusStatus(b.id, b.status)} className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[b.status] || ''}`}>
+                    {b.status}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                  <div>Type: <span className="text-foreground">{b.type}</span></div>
+                  <div>Seats: <span className="text-foreground">{b.total_seats}</span></div>
+                  <div className="col-span-2">Reg: <span className="text-foreground font-mono text-[10px]">{b.registration_number}</span></div>
+                </div>
+                <div className="flex justify-end mt-3 gap-1">
+                  <button onClick={() => handleDeleteBus(b.id)} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <div>Type: <span className="text-foreground">{b.type}</span></div>
-                <div>Seats: <span className="text-foreground">{b.total_seats}</span></div>
-                <div className="col-span-2">Reg: <span className="text-foreground font-mono text-[10px]">{b.registration_number}</span></div>
-              </div>
-              <div className="flex justify-end mt-3 gap-1">
-                <button onClick={() => handleDeleteBus(b.id)} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-              </div>
-            </div>
-          ))}
-          {buses.length === 0 && <p className="text-muted-foreground text-sm col-span-3 text-center py-8">No buses in fleet</p>}
+            ))}
+            {buses.length === 0 && <p className="text-muted-foreground text-sm col-span-3 text-center py-8">No buses in fleet — click "Add Bus" to create one</p>}
+          </div>
         </div>
       )}
 
-      {/* Schedules Table */}
+      {/* ─── SCHEDULES ─── */}
       {section === 'schedules' && (
-        <div className="glass-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/30">
-                  <th className="text-left p-3 font-medium text-muted-foreground">Route</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Bus</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Departure</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Arrival</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Days</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedules.map(s => {
-                  const route = s.routes as any;
-                  const bus = s.buses as any;
-                  const dayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-                  return (
-                    <tr key={s.id} className="border-b border-border/10 hover:bg-secondary/20 transition-colors">
-                      <td className="p-3 font-medium">{route?.origin} → {route?.destination}</td>
-                      <td className="p-3 text-muted-foreground">{bus?.name}</td>
-                      <td className="p-3">{s.departure_time?.slice(0, 5)}</td>
-                      <td className="p-3">{s.arrival_time?.slice(0, 5)}</td>
-                      <td className="p-3">
-                        <div className="flex gap-0.5">
-                          {dayLabels.map((d, i) => (
-                            <span key={d} className={`text-[9px] w-4 h-4 rounded flex items-center justify-center ${(s.days_of_week || []).includes(i) ? 'bg-primary/20 text-primary font-bold' : 'bg-secondary/30 text-muted-foreground/40'}`}>
-                              {d}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[s.status] || ''}`}>{s.status}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {schedules.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">No schedules configured</p>}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Manage Schedules</h3>
+            <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add Schedule
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showForm && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="glass-card p-5 space-y-3">
+                <h4 className="text-sm font-semibold">New Schedule</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <select value={scheduleForm.route_id} onChange={e => setScheduleForm({ ...scheduleForm, route_id: e.target.value })} className={selectCls}>
+                    <option value="">Select Route</option>
+                    {routes.map(r => <option key={r.id} value={r.id}>{r.origin} → {r.destination}</option>)}
+                  </select>
+                  <select value={scheduleForm.bus_id} onChange={e => setScheduleForm({ ...scheduleForm, bus_id: e.target.value })} className={selectCls}>
+                    <option value="">Select Bus</option>
+                    {buses.map(b => <option key={b.id} value={b.id}>{b.name} ({b.type})</option>)}
+                  </select>
+                  <input placeholder="Fare Override (৳)" type="number" value={scheduleForm.fare_override} onChange={e => setScheduleForm({ ...scheduleForm, fare_override: e.target.value })} className={inputCls} />
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">Departure</label>
+                    <input type="time" value={scheduleForm.departure_time} onChange={e => setScheduleForm({ ...scheduleForm, departure_time: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">Arrival</label>
+                    <input type="time" value={scheduleForm.arrival_time} onChange={e => setScheduleForm({ ...scheduleForm, arrival_time: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">Days</label>
+                    <div className="flex gap-1">
+                      {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d, i) => (
+                        <button key={d} type="button"
+                          onClick={() => setScheduleForm({ ...scheduleForm, days_of_week: scheduleForm.days_of_week.includes(i) ? scheduleForm.days_of_week.filter(x => x !== i) : [...scheduleForm.days_of_week, i] })}
+                          className={`w-7 h-7 rounded text-[10px] font-bold ${scheduleForm.days_of_week.includes(i) ? 'bg-primary/20 text-primary' : 'bg-secondary/30 text-muted-foreground'}`}>
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground">Cancel</button>
+                  <button onClick={handleCreateSchedule} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50">
+                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Create
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="glass-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30">
+                    <th className="text-left p-3 font-medium text-muted-foreground">Route</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Bus</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Departure</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Arrival</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Days</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                    <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedules.map(s => {
+                    const route = s.routes as any;
+                    const bus = s.buses as any;
+                    const dayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+                    return (
+                      <tr key={s.id} className="border-b border-border/10 hover:bg-secondary/20 transition-colors">
+                        <td className="p-3 font-medium">{route?.origin} → {route?.destination}</td>
+                        <td className="p-3 text-muted-foreground">{bus?.name}</td>
+                        <td className="p-3">{s.departure_time?.slice(0, 5)}</td>
+                        <td className="p-3">{s.arrival_time?.slice(0, 5)}</td>
+                        <td className="p-3">
+                          <div className="flex gap-0.5">
+                            {dayLabels.map((d, i) => (
+                              <span key={d} className={`text-[9px] w-4 h-4 rounded flex items-center justify-center ${(s.days_of_week || []).includes(i) ? 'bg-primary/20 text-primary font-bold' : 'bg-secondary/30 text-muted-foreground/40'}`}>
+                                {d}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[s.status] || ''}`}>{s.status}</span>
+                        </td>
+                        <td className="p-3 text-right">
+                          <button onClick={async () => { if (!confirm('Delete schedule?')) return; await deleteSchedule(s.id); await reload(); }} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {schedules.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">No schedules — create routes and buses first, then add schedules</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── COUNTERS ─── */}
+      {section === 'counters' && (
+        <div className="space-y-5">
+          {/* Terminals */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Terminals ({terminals.length})</h3>
+              <button onClick={() => setShowTerminalForm(!showTerminalForm)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
+                <Plus className="w-3.5 h-3.5" /> Add Terminal
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showTerminalForm && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="glass-card p-5 space-y-3">
+                  <h4 className="text-sm font-semibold">New Terminal</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <input placeholder="Terminal Name" value={terminalForm.name} onChange={e => setTerminalForm({ ...terminalForm, name: e.target.value })} className={inputCls} />
+                    <input placeholder="Short Name" value={terminalForm.short_name} onChange={e => setTerminalForm({ ...terminalForm, short_name: e.target.value })} className={inputCls} />
+                    <input placeholder="Location" value={terminalForm.location} onChange={e => setTerminalForm({ ...terminalForm, location: e.target.value })} className={inputCls} />
+                    <input placeholder="District" value={terminalForm.district} onChange={e => setTerminalForm({ ...terminalForm, district: e.target.value })} className={inputCls} />
+                    <input placeholder="Phone" value={terminalForm.phone} onChange={e => setTerminalForm({ ...terminalForm, phone: e.target.value })} className={inputCls} />
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={terminalForm.is_main_terminal} onChange={e => setTerminalForm({ ...terminalForm, is_main_terminal: e.target.checked })} className="rounded" />
+                      Main Terminal
+                    </label>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setShowTerminalForm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground">Cancel</button>
+                    <button onClick={handleCreateTerminal} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50">
+                      {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Create
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {terminals.map(t => (
+                <div key={t.id} className="glass-card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-semibold text-sm">{t.name} <span className="text-muted-foreground font-normal">({t.short_name})</span></div>
+                    <button onClick={() => handleDeleteTerminal(t.id)} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{t.location}, {t.district}</div>
+                  <div className="text-xs text-muted-foreground mt-1">📞 {t.phone}</div>
+                  {t.is_main_terminal && <span className="inline-block mt-2 text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Main</span>}
+                </div>
+              ))}
+              {terminals.length === 0 && <p className="text-muted-foreground text-sm col-span-3 text-center py-8">No terminals yet — click "Add Terminal"</p>}
+            </div>
+          </div>
+
+          {/* Route Counters */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Route Counter Stops</h3>
+              <div className="flex gap-2 items-center">
+                <select value={selectedRouteForCounters} onChange={e => setSelectedRouteForCounters(e.target.value)} className={`${selectCls} max-w-xs`}>
+                  <option value="">Select Route</option>
+                  {routes.map(r => <option key={r.id} value={r.id}>{r.origin} → {r.destination}</option>)}
+                </select>
+                {selectedRouteForCounters && (
+                  <button onClick={() => setShowCounterForm(!showCounterForm)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors shrink-0">
+                    <Plus className="w-3.5 h-3.5" /> Add Stop
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <AnimatePresence>
+              {showCounterForm && selectedRouteForCounters && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="glass-card p-5 space-y-3">
+                  <h4 className="text-sm font-semibold">New Counter Stop</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <input placeholder="Stop Name" value={counterForm.name} onChange={e => setCounterForm({ ...counterForm, name: e.target.value })} className={inputCls} />
+                    <input placeholder="Location" value={counterForm.location} onChange={e => setCounterForm({ ...counterForm, location: e.target.value })} className={inputCls} />
+                    <input placeholder="District" value={counterForm.district} onChange={e => setCounterForm({ ...counterForm, district: e.target.value })} className={inputCls} />
+                    <input placeholder="Phone" value={counterForm.phone} onChange={e => setCounterForm({ ...counterForm, phone: e.target.value })} className={inputCls} />
+                    <select value={counterForm.counter_type} onChange={e => setCounterForm({ ...counterForm, counter_type: e.target.value as any })} className={selectCls}>
+                      <option value="Starting Point">Starting Point</option>
+                      <option value="Counter">Counter</option>
+                      <option value="Break (20 min)">Break (20 min)</option>
+                      <option value="Last Stop">Last Stop</option>
+                    </select>
+                    <select value={counterForm.status} onChange={e => setCounterForm({ ...counterForm, status: e.target.value as any })} className={selectCls}>
+                      <option value="Active">Active</option>
+                      <option value="Unverified">Unverified</option>
+                      <option value="Unconfirmed">Unconfirmed</option>
+                    </select>
+                    <input placeholder="Sort Order" type="number" value={counterForm.sort_order} onChange={e => setCounterForm({ ...counterForm, sort_order: e.target.value })} className={inputCls} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setShowCounterForm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground">Cancel</button>
+                    <button onClick={handleCreateCounter} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50">
+                      {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Create
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!selectedRouteForCounters ? (
+              <p className="text-center text-muted-foreground py-8 text-sm glass-card">Select a route above to manage its counter stops</p>
+            ) : (
+              <div className="glass-card overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/30">
+                        <th className="text-left p-3 font-medium text-muted-foreground">#</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Location</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Type</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Phone</th>
+                        <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {counters.map((c, i) => (
+                        <tr key={c.id} className="border-b border-border/10 hover:bg-secondary/20 transition-colors">
+                          <td className="p-3 text-muted-foreground">{c.sort_order ?? i + 1}</td>
+                          <td className="p-3 font-medium">{c.name}</td>
+                          <td className="p-3 text-muted-foreground">{c.location}, {c.district}</td>
+                          <td className="p-3"><span className="px-2 py-0.5 rounded-full text-xs bg-secondary">{c.counter_type}</span></td>
+                          <td className="p-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : c.status === 'Unverified' ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400'}`}>{c.status}</span></td>
+                          <td className="p-3 text-muted-foreground">{c.phone}</td>
+                          <td className="p-3 text-right">
+                            <button onClick={() => handleDeleteCounter(c.id)} className="text-red-400 hover:text-red-300 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {counters.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">No counter stops for this route — click "Add Stop"</p>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
