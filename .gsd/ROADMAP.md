@@ -45,7 +45,7 @@
 ---
 
 ### Phase 5: Payment Integration
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Integrate SSLCommerz (or similar BD payment gateway) for bKash, Nagad, Rocket, and card payments. Implement payment verification, booking confirmation, and digital ticket generation with QR codes.
 **Deliverable**: Working payment flow with real MFS and card processing.
 
