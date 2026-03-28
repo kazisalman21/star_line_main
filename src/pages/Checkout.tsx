@@ -5,7 +5,8 @@ import { Shield, CreditCard, Smartphone, Building2, ChevronRight, Lock, Loader2,
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
-import { getBookingDetails, confirmBooking, BookingDetails } from '@/services/bookingService';
+import { getBookingDetails, BookingDetails } from '@/services/bookingService';
+import { initiatePayment } from '@/services/paymentService';
 
 const paymentMethods = [
   { id: 'bkash', name: 'bKash', desc: 'Pay with bKash mobile wallet', icon: Smartphone, color: 'text-pink-400' },
@@ -41,13 +42,21 @@ export default function Checkout() {
     if (!booking) return;
     setConfirming(true);
     setError('');
-    const ok = await confirmBooking(bookingId, paymentMethod);
-    if (ok) {
+
+    // Counter payment — skip SSLCommerz, keep booking pending
+    if (paymentMethod === 'counter') {
       navigate(`/ticket?bookingId=${bookingId}`);
-    } else {
-      setError('Payment failed. Please try again.');
+      return;
     }
-    setConfirming(false);
+
+    // Online payment — redirect to SSLCommerz gateway
+    const gatewayUrl = await initiatePayment(bookingId, paymentMethod);
+    if (gatewayUrl) {
+      window.location.replace(gatewayUrl);
+    } else {
+      setError('Payment gateway unavailable. Please try again or pay at counter.');
+      setConfirming(false);
+    }
   };
 
   if (loading) {

@@ -19,6 +19,9 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import Profile from "./pages/Profile.tsx";
 import PassengerDashboard from "./pages/PassengerDashboard.tsx";
+import PaymentSuccess from "./pages/PaymentSuccess.tsx";
+import PaymentFail from "./pages/PaymentFail.tsx";
+import PaymentCancel from "./pages/PaymentCancel.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -48,6 +51,11 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Register />} />
               <Route path="/register" element={<Register />} />
+
+              {/* Payment return pages — public (session may not persist after SSLCommerz redirect) */}
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/fail" element={<PaymentFail />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
 
               {/* Protected routes — require login */}
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />

@@ -28,7 +28,7 @@ export interface BookingDetails {
   schedule: { departureTime: string; arrivalTime: string };
   bus: { name: string; type: string; amenities: string[] };
   seats: { seatNumber: string; fare: number }[];
-  payment: { method: string; status: string; paidAt: string | null } | null;
+  payment: { method: string; status: string; paidAt: string | null; transactionId: string | null } | null;
 }
 
 export interface UserBooking {
@@ -361,6 +361,7 @@ export async function getBookingDetails(bookingId: string): Promise<BookingDetai
         method: payment.method,
         status: payment.status,
         paidAt: payment.paid_at,
+        transactionId: payment.transaction_id,
       } : null,
     };
   } catch (err) {

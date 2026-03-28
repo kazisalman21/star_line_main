@@ -129,8 +129,16 @@ export default function TicketConfirmation() {
             <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-success" />
             </div>
-            <h1 className="font-display text-3xl font-bold mb-2">Booking Confirmed!</h1>
-            <p className="text-muted-foreground">Your ticket has been booked successfully</p>
+            <h1 className="font-display text-3xl font-bold mb-2">
+              {booking.status === 'confirmed' ? 'Booking Confirmed!' :
+               booking.status === 'pending' ? 'Booking Reserved' :
+               booking.status === 'cancelled' ? 'Booking Cancelled' : 'Your Ticket'}
+            </h1>
+            <p className="text-muted-foreground">
+              {booking.status === 'pending'
+                ? 'Complete payment to confirm your booking'
+                : 'Your ticket has been booked successfully'}
+            </p>
           </motion.div>
 
           <motion.div ref={ticketRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card overflow-hidden">
@@ -139,6 +147,20 @@ export default function TicketConfirmation() {
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Booking ID</div>
                 <div className="font-display font-bold text-lg">{pnr}</div>
+                {/* Payment status badge */}
+                {booking.payment?.status === 'success' ? (
+                  <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle2 className="w-3 h-3" /> Paid via {booking.payment.method}
+                  </span>
+                ) : booking.status === 'cancelled' ? (
+                  <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                    Cancelled
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <Clock className="w-3 h-3" /> Payment Pending
+                  </span>
+                )}
               </div>
               <div className="bg-white p-2 rounded-xl">
                 <QRCodeSVG value={qrData} size={72} level="M" />
@@ -191,11 +213,26 @@ export default function TicketConfirmation() {
 
               <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground">Total Paid ({booking.payment?.method || 'N/A'})</div>
+                  <div className="text-xs text-muted-foreground">
+                    {booking.payment?.status === 'success' ? `Total Paid (${booking.payment.method})` : 'Total Due'}
+                  </div>
                   <div className="font-display font-bold text-xl text-accent">৳{booking.totalFare}</div>
+                  {booking.payment?.transactionId && (
+                    <div className="text-[10px] text-muted-foreground mt-0.5">TXN: {booking.payment.transactionId}</div>
+                  )}
                 </div>
                 <CreditCard className="w-6 h-6 text-accent" />
               </div>
+
+              {/* Pay Now button for pending bookings */}
+              {booking.status === 'pending' && !booking.payment?.status && (
+                <Link
+                  to={`/checkout?bookingId=${booking.id}`}
+                  className="block w-full text-center bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold text-sm hover:bg-primary/90 transition-colors btn-primary-glow"
+                >
+                  Pay Now — ৳{booking.totalFare}
+                </Link>
+              )}
 
               {/* Boarding Info */}
               <div className="bg-secondary/30 rounded-lg p-4 text-sm space-y-2">
