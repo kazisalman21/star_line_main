@@ -11,7 +11,9 @@ import { FleetTab } from '@/components/admin/FleetTab';
 import { CountersTab } from '@/components/admin/CountersTab';
 import { RoutesTab } from '@/components/admin/RoutesTab';
 import { BookingsTab } from '@/components/admin/BookingsTab';
-import { SchedulesTab } from '@/components/admin/SchedulesTab'; // <-- Added here
+import { SchedulesTab } from '@/components/admin/SchedulesTab';
+import { DriversTab } from '@/components/admin/DriversTab';
+import { SettingsTab } from '@/components/admin/SettingsTab';
 
 type AdminTab = 'overview' | 'fleet' | 'counters' | 'routes' | 'schedules' | 'bookings' | 'drivers' | 'settings';
 
@@ -20,7 +22,7 @@ const adminTabs: { id: AdminTab; label: string; icon: typeof LayoutDashboard }[]
   { id: 'fleet', label: 'Fleet', icon: Bus },
   { id: 'counters', label: 'Counters', icon: Building2 },
   { id: 'routes', label: 'Routes', icon: Route },
-  { id: 'schedules', label: 'Schedules', icon: Calendar }, // <-- Added here
+  { id: 'schedules', label: 'Schedules', icon: Calendar },
   { id: 'bookings', label: 'Bookings', icon: Ticket },
   { id: 'drivers', label: 'Drivers', icon: UserCog },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -35,10 +37,10 @@ export default function AdminDashboard() {
       case 'fleet': return <FleetTab />;
       case 'counters': return <CountersTab />;
       case 'routes': return <RoutesTab />;
-      case 'schedules': return <SchedulesTab />; // <-- Added here
+      case 'schedules': return <SchedulesTab />;
       case 'bookings': return <BookingsTab />;
-      case 'drivers': return <div className="text-center py-20 text-muted-foreground glass-card">Driver management module is under construction.</div>;
-      case 'settings': return <div className="text-center py-20 text-muted-foreground glass-card">System settings module is under construction.</div>;
+      case 'drivers': return <DriversTab />;
+      case 'settings': return <SettingsTab />;
       default: return null;
     }
   };
