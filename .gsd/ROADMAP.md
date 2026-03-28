@@ -38,7 +38,7 @@
 ---
 
 ### Phase 4: Booking Engine & Seat Selection
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Build the booking engine — real-time seat availability, seat locking during selection, booking creation, and status management. Connect SeatSelection and Checkout pages to backend.
 **Deliverable**: End-to-end booking flow with real seat availability.
 

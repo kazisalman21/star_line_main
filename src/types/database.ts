@@ -40,6 +40,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       routes: {
         Row: {
@@ -72,6 +73,7 @@ export interface Database {
           status?: 'active' | 'inactive';
           created_at?: string;
         };
+        Relationships: [];
       };
       buses: {
         Row: {
@@ -104,6 +106,7 @@ export interface Database {
           status?: 'active' | 'maintenance' | 'retired';
           created_at?: string;
         };
+        Relationships: [];
       };
       schedules: {
         Row: {
@@ -139,6 +142,22 @@ export interface Database {
           status?: 'active' | 'cancelled' | 'completed';
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'schedules_route_id_fkey';
+            columns: ['route_id'];
+            isOneToOne: false;
+            referencedRelation: 'routes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'schedules_bus_id_fkey';
+            columns: ['bus_id'];
+            isOneToOne: false;
+            referencedRelation: 'buses';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       seats: {
         Row: {
@@ -165,6 +184,15 @@ export interface Database {
           seat_type?: 'standard' | 'premium' | 'ladies';
           is_active?: boolean;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'seats_bus_id_fkey';
+            columns: ['bus_id'];
+            isOneToOne: false;
+            referencedRelation: 'buses';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       bookings: {
         Row: {
@@ -212,6 +240,15 @@ export interface Database {
           passenger_email?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'bookings_schedule_id_fkey';
+            columns: ['schedule_id'];
+            isOneToOne: false;
+            referencedRelation: 'schedules';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       booking_seats: {
         Row: {
@@ -232,6 +269,22 @@ export interface Database {
           seat_id?: string;
           fare?: number;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'booking_seats_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_seats_seat_id_fkey';
+            columns: ['seat_id'];
+            isOneToOne: false;
+            referencedRelation: 'seats';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       payments: {
         Row: {
@@ -264,6 +317,15 @@ export interface Database {
           paid_at?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'payments_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+        ];
       };
     };
     Views: Record<string, never>;
