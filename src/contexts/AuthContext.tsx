@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Session, User } from '@supabase/supabase-js';
 import type { Profile } from '@/types/database';
@@ -32,8 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const profileFetched = useRef(false);
 
-  // Fetch profile data only (fast, no side-effects)
+  // Fetch profile data
   const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Background sync: pull Google/Facebook name+avatar into profile (non-blocking, fire-and-forget)
+  // Background sync: pull Google/Facebook name+avatar into profile
   const syncOAuthMeta = async (userId: string) => {
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
@@ -94,39 +95,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setProfile(null);
+    profileFetched.current = false;
   };
 
+  // 1) Auth listener — NO async, just set user/session state
   useEffect(() => {
-    // Restore session on mount
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) {
-        fetchProfile(s.user.id).then(() => setLoading(false));
-        // Fire-and-forget: sync OAuth metadata in background
-        syncOAuthMeta(s.user.id);
-      } else {
-        setLoading(false);
-      }
+      if (!s?.user) setLoading(false);
     });
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, s) => {
+      (_event, s) => {
         setSession(s);
         setUser(s?.user ?? null);
-        if (s?.user) {
-          await fetchProfile(s.user.id);
-          syncOAuthMeta(s.user.id);
-        } else {
+        if (!s?.user) {
           setProfile(null);
+          setLoading(false);
+          profileFetched.current = false;
         }
-        setLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // 2) When user changes, fetch profile (separate from auth callback to avoid lock issues)
+  useEffect(() => {
+    if (user?.id) {
+      profileFetched.current = false;
+      fetchProfile(user.id).then(() => {
+        setLoading(false);
+        profileFetched.current = true;
+        // Fire-and-forget: sync OAuth metadata
+        syncOAuthMeta(user.id);
+      });
+    }
+  }, [user?.id]);
 
   return (
     <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
