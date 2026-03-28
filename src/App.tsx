@@ -67,7 +67,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><PassengerDashboard /></ProtectedRoute>} />
 
               {/* Admin routes — require admin role */}
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

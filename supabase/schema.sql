@@ -155,6 +155,16 @@ CREATE TABLE payments (
 );
 
 -- ============================================================
+-- HELPER: admin check that bypasses RLS (prevents infinite recursion)
+-- ============================================================
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
 
@@ -179,9 +189,7 @@ CREATE POLICY "Users can update own profile"
 
 CREATE POLICY "Admins can view all profiles"
   ON profiles FOR SELECT
-  USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING (is_admin());
 
 -- ROUTES: public read, admin write
 CREATE POLICY "Anyone can view active routes"
