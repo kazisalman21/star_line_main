@@ -24,6 +24,7 @@ export function RoutesTab() {
   const [showAddRoute, setShowAddRoute] = useState(false);
   const [showViewRoute, setShowViewRoute] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<any>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { confirm, DialogComponent } = useConfirmDialog();
 
@@ -47,20 +48,45 @@ export function RoutesTab() {
 
   useEffect(() => { load(); }, []);
 
-  const handleCreate = async () => {
+  const handleCreateOrUpdate = async () => {
     if (!routeForm.origin || !routeForm.destination) return;
     setSaving(true);
-    await createRoute({
-      origin: routeForm.origin,
-      destination: routeForm.destination,
-      distance_km: parseInt(routeForm.distance_km) || 0,
-      duration_minutes: parseInt(routeForm.duration_minutes) || 0,
-      base_fare: parseInt(routeForm.base_fare) || 0
-    });
+    
+    if (editingId) {
+      await updateRoute(editingId, {
+        origin: routeForm.origin,
+        destination: routeForm.destination,
+        distance_km: parseInt(routeForm.distance_km) || 0,
+        duration_minutes: parseInt(routeForm.duration_minutes) || 0,
+        base_fare: parseInt(routeForm.base_fare) || 0
+      });
+    } else {
+      await createRoute({
+        origin: routeForm.origin,
+        destination: routeForm.destination,
+        distance_km: parseInt(routeForm.distance_km) || 0,
+        duration_minutes: parseInt(routeForm.duration_minutes) || 0,
+        base_fare: parseInt(routeForm.base_fare) || 0
+      });
+    }
+    
     setRouteForm({ origin: '', destination: '', distance_km: '', duration_minutes: '', base_fare: '' });
+    setEditingId(null);
     setShowAddRoute(false);
     setSaving(false);
     load();
+  };
+
+  const openForEdit = (route: any) => {
+    setEditingId(route.id);
+    setRouteForm({
+      origin: route.origin,
+      destination: route.destination,
+      distance_km: route.distance_km.toString(),
+      duration_minutes: route.duration_minutes.toString(),
+      base_fare: route.base_fare.toString()
+    });
+    setShowAddRoute(true);
   };
 
   const handleDelete = (id: string) => {
@@ -92,7 +118,7 @@ export function RoutesTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search routes by city..." className="pl-9 bg-secondary/50 border-border/40 sm:w-64" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <Button onClick={() => setShowAddRoute(true)} className="btn-primary-glow shrink-0">
+          <Button onClick={() => { setEditingId(null); setRouteForm({ origin: '', destination: '', distance_km: '', duration_minutes: '', base_fare: '' }); setShowAddRoute(true); }} className="btn-primary-glow shrink-0">
             <Plus className="w-4 h-4 mr-1" /> Add Route
           </Button>
         </div>
@@ -137,7 +163,7 @@ export function RoutesTab() {
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedRoute({ ...route, ...cs }); setShowViewRoute(true); }}><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openForEdit(route)}><Pencil className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(route.id)}><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   </TableCell>
@@ -186,12 +212,12 @@ export function RoutesTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Route Dialog */}
-      <Dialog open={showAddRoute} onOpenChange={setShowAddRoute}>
+      {/* Add/Edit Route Dialog */}
+      <Dialog open={showAddRoute} onOpenChange={(open) => { setShowAddRoute(open); if (!open) setEditingId(null); }}>
         <DialogContent className="glass-card border-border/40">
           <DialogHeader>
-            <DialogTitle className="font-display">Add New Route</DialogTitle>
-            <DialogDescription>Create a new bus route for scheduling.</DialogDescription>
+            <DialogTitle className="font-display">{editingId ? 'Edit Route' : 'Add New Route'}</DialogTitle>
+            <DialogDescription>{editingId ? 'Update details for this bus route.' : 'Create a new bus route for scheduling.'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -203,14 +229,16 @@ export function RoutesTab() {
               <div><label className="text-xs text-muted-foreground mb-1 block">Time (minutes)</label><Input type="number" placeholder="180" value={routeForm.duration_minutes} onChange={e => setRouteForm(p => ({ ...p, duration_minutes: e.target.value }))} className="bg-secondary/50" /></div>
               <div><label className="text-xs text-muted-foreground mb-1 block">Base Fare (৳)</label><Input type="number" placeholder="400" value={routeForm.base_fare} onChange={e => setRouteForm(p => ({ ...p, base_fare: e.target.value }))} className="bg-secondary/50" /></div>
             </div>
-            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500/80 p-3 rounded-lg text-xs leading-relaxed">
-              <strong>Note:</strong> Once created, you must add "Schedules" and "Counter Stops" before passengers can book tickets on this route.
-            </div>
+            {!editingId && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500/80 p-3 rounded-lg text-xs leading-relaxed">
+                <strong>Note:</strong> Once created, you must add "Schedules" and "Counter Stops" before passengers can book tickets on this route.
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddRoute(false)}>Cancel</Button>
-            <Button className="btn-primary-glow" onClick={handleCreate} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />} Add Route
+            <Button className="btn-primary-glow" onClick={handleCreateOrUpdate} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />} {editingId ? 'Save Changes' : 'Add Route'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -11,6 +11,7 @@ export function CountersTab() {
   const [routesWithCounters, setRoutesWithCounters] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddTerminal, setShowAddTerminal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { confirm, DialogComponent } = useConfirmDialog();
   const [terminalForm, setTerminalForm] = useState({ name: '', shortName: '', location: '', district: '', phone: '', isMain: false });
@@ -31,22 +32,49 @@ export function CountersTab() {
 
   useEffect(() => { load(); }, []);
 
-  const handleCreate = async () => {
+  const handleCreateOrUpdate = async () => {
     if (!terminalForm.name || !terminalForm.shortName) return;
     setSaving(true);
     const mod = await import('@/services/counterService');
-    await mod.createTerminal({
-      name: terminalForm.name,
-      short_name: terminalForm.shortName,
-      location: terminalForm.location,
-      district: terminalForm.district,
-      phone: terminalForm.phone,
-      is_main_terminal: terminalForm.isMain,
-    });
+    
+    if (editingId) {
+      await mod.updateTerminal(editingId, {
+        name: terminalForm.name,
+        short_name: terminalForm.shortName,
+        location: terminalForm.location,
+        district: terminalForm.district,
+        phone: terminalForm.phone,
+        is_main_terminal: terminalForm.isMain,
+      });
+    } else {
+      await mod.createTerminal({
+        name: terminalForm.name,
+        short_name: terminalForm.shortName,
+        location: terminalForm.location,
+        district: terminalForm.district,
+        phone: terminalForm.phone,
+        is_main_terminal: terminalForm.isMain,
+      });
+    }
+    
     setTerminalForm({ name: '', shortName: '', location: '', district: '', phone: '', isMain: false });
+    setEditingId(null);
     setShowAddTerminal(false);
     setSaving(false);
     load();
+  };
+
+  const openForEdit = (terminal: any) => {
+    setEditingId(terminal.id);
+    setTerminalForm({
+      name: terminal.name,
+      shortName: terminal.short_name || terminal.shortName || '',
+      location: terminal.location,
+      district: terminal.district,
+      phone: terminal.phone,
+      isMain: terminal.is_main_terminal || terminal.isMainTerminal || false,
+    });
+    setShowAddTerminal(true);
   };
 
   const handleDelete = (id: string) => {
@@ -76,7 +104,7 @@ export function CountersTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search terminals..." className="pl-9 bg-secondary/50 border-border/40 sm:w-64" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <Button onClick={() => setShowAddTerminal(true)} className="btn-primary-glow shrink-0">
+          <Button onClick={() => { setEditingId(null); setTerminalForm({ name: '', shortName: '', location: '', district: '', phone: '', isMain: false }); setShowAddTerminal(true); }} className="btn-primary-glow shrink-0">
             <Plus className="w-4 h-4 mr-1" /> Add Terminal
           </Button>
         </div>
@@ -97,7 +125,7 @@ export function CountersTab() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7"><Pencil className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openForEdit(terminal)}><Pencil className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(terminal.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
               </div>
             </div>
@@ -138,12 +166,12 @@ export function CountersTab() {
         </div>
       )}
 
-      {/* Add Terminal Dialog */}
-      <Dialog open={showAddTerminal} onOpenChange={setShowAddTerminal}>
+      {/* Add/Edit Terminal Dialog */}
+      <Dialog open={showAddTerminal} onOpenChange={(open) => { setShowAddTerminal(open); if (!open) setEditingId(null); }}>
         <DialogContent className="glass-card border-border/40">
           <DialogHeader>
-            <DialogTitle className="font-display">Add New Terminal</DialogTitle>
-            <DialogDescription>Register a new counter or terminal location.</DialogDescription>
+            <DialogTitle className="font-display">{editingId ? 'Edit Terminal' : 'Add New Terminal'}</DialogTitle>
+            <DialogDescription>{editingId ? 'Update details for this terminal/counter.' : 'Register a new counter or terminal location.'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div><label className="text-xs text-muted-foreground mb-1 block">Terminal Name</label><Input placeholder="e.g. Tongi Star Line Counter" className="bg-secondary/50" value={terminalForm.name} onChange={e => setTerminalForm(p => ({ ...p, name: e.target.value }))} /></div>
@@ -160,8 +188,8 @@ export function CountersTab() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddTerminal(false)}>Cancel</Button>
-            <Button className="btn-primary-glow" onClick={handleCreate} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />} Add Terminal
+            <Button className="btn-primary-glow" onClick={handleCreateOrUpdate} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />} {editingId ? 'Save Changes' : 'Add Terminal'}
             </Button>
           </DialogFooter>
         </DialogContent>
