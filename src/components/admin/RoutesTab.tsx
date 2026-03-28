@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getAllRoutes, createRoute, deleteRoute, updateRoute } from '@/services/adminService';
+import { getRoutesWithCounters } from '@/services/counterService';
 import { useConfirmDialog } from '@/components/admin/ConfirmDialog';
 
 const statusBadge = (status: string) => {
@@ -18,16 +19,30 @@ const statusBadge = (status: string) => {
 
 export function RoutesTab() {
   const [routes, setRoutes] = useState<any[]>([]);
+  const [counterMap, setCounterMap] = useState<Record<string, { total: number; active: number; hasUnverified: boolean }>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddRoute, setShowAddRoute] = useState(false);
+  const [showViewRoute, setShowViewRoute] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const { confirm, DialogComponent } = useConfirmDialog();
-  
+
   const [routeForm, setRouteForm] = useState({ origin: '', destination: '', distance_km: '', duration_minutes: '', base_fare: '' });
 
   const load = async () => {
-    const data = await getAllRoutes();
-    setRoutes(data);
+    const [routeData, rcData] = await Promise.all([getAllRoutes(), getRoutesWithCounters()]);
+    setRoutes(routeData);
+
+    // Build counter stats map by route ID
+    const map: Record<string, { total: number; active: number; hasUnverified: boolean }> = {};
+    rcData.forEach((rc: any) => {
+      map[rc.id] = {
+        total: rc.counters.length,
+        active: rc.counters.filter((c: any) => c.status === 'Active').length,
+        hasUnverified: rc.counters.some((c: any) => c.status === 'Unverified'),
+      };
+    });
+    setCounterMap(map);
   };
 
   useEffect(() => { load(); }, []);
@@ -70,7 +85,7 @@ export function RoutesTab() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl font-bold">Route Management</h2>
-          <p className="text-sm text-muted-foreground">{routes.length} configured bus routes</p>
+          <p className="text-sm text-muted-foreground">{routes.length} routes configured</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
@@ -87,49 +102,91 @@ export function RoutesTab() {
         <Table>
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
-              <TableHead className="text-muted-foreground w-12"><Route className="w-4 h-4" /></TableHead>
-              <TableHead className="text-muted-foreground">Origin → Destination</TableHead>
-              <TableHead className="text-muted-foreground hidden md:table-cell">Distance / Time</TableHead>
-              <TableHead className="text-muted-foreground hidden lg:table-cell">Base Fare</TableHead>
-              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground font-mono text-xs">Route ID</TableHead>
+              <TableHead className="text-muted-foreground">From</TableHead>
+              <TableHead className="text-muted-foreground">To</TableHead>
+              <TableHead className="text-muted-foreground hidden md:table-cell">Stops</TableHead>
+              <TableHead className="text-muted-foreground hidden md:table-cell">Status</TableHead>
               <TableHead className="text-muted-foreground text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {routes.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No routes configured yet. Click "Add Route".</TableCell></TableRow>
-            ) : routes.filter(r => !searchQuery || r.origin.toLowerCase().includes(searchQuery.toLowerCase()) || r.destination.toLowerCase().includes(searchQuery.toLowerCase())).map((route, i) => (
-              <motion.tr key={route.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="border-border/20 hover:bg-secondary/20">
-                <TableCell>
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <LinkIcon className="w-4 h-4 text-primary" />
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-sm">{route.origin} <span className="text-muted-foreground mx-1">→</span> {route.destination}</div>
-                  <div className="text-[10px] text-muted-foreground font-mono mt-1 uppercase tracking-wider">ID: {route.id.slice(0, 8)}</div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <div className="text-sm font-medium">{route.distance_km} km</div>
-                  <div className="text-xs text-muted-foreground">{Math.floor(route.duration_minutes / 60)}h {route.duration_minutes % 60}m</div>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell font-medium text-sm">৳{route.base_fare}</TableCell>
-                <TableCell>
-                  <button onClick={() => handleToggleStatus(route.id, route.status)} className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider capitalize ${statusBadge(route.status)} hover:opacity-80`}>
-                    {route.status}
-                  </button>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(route.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                </TableCell>
-              </motion.tr>
-            ))}
+            ) : routes.filter(r => !searchQuery || r.origin.toLowerCase().includes(searchQuery.toLowerCase()) || r.destination.toLowerCase().includes(searchQuery.toLowerCase())).map((route, i) => {
+              const cs = counterMap[route.id] || { total: 0, active: 0, hasUnverified: false };
+              return (
+                <motion.tr key={route.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="border-border/20 hover:bg-secondary/20">
+                  <TableCell className="font-mono text-xs text-muted-foreground uppercase">{route.id.slice(0, 8)}</TableCell>
+                  <TableCell className="font-medium text-sm">{route.origin}</TableCell>
+                  <TableCell className="font-medium text-sm">{route.destination}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <span className="text-xs bg-secondary/60 px-2 py-1 rounded-md">{cs.total} stops</span>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {cs.total > 0 ? (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${cs.hasUnverified ? 'bg-warning/15 text-warning' : 'bg-success/15 text-success'}`}>
+                        {cs.hasUnverified ? 'Partially Verified' : 'Verified'}
+                      </span>
+                    ) : (
+                      <button onClick={() => handleToggleStatus(route.id, route.status)} className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider capitalize ${statusBadge(route.status)} hover:opacity-80`}>
+                        {route.status}
+                      </button>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedRoute({ ...route, ...cs }); setShowViewRoute(true); }}><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(route.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </TableCell>
+                </motion.tr>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
 
+      {/* View Route Detail Dialog */}
+      <Dialog open={showViewRoute} onOpenChange={setShowViewRoute}>
+        <DialogContent className="glass-card border-border/40 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display">Route Details</DialogTitle>
+            <DialogDescription>Full route information</DialogDescription>
+          </DialogHeader>
+          {selectedRoute && (
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between py-2 border-b border-border/20">
+                <span className="text-muted-foreground">Route</span>
+                <span className="font-medium">{selectedRoute.origin} → {selectedRoute.destination}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/20">
+                <span className="text-muted-foreground">Distance</span>
+                <span className="font-medium">{selectedRoute.distance_km} km</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/20">
+                <span className="text-muted-foreground">Duration</span>
+                <span className="font-medium">{Math.floor(selectedRoute.duration_minutes / 60)}h {selectedRoute.duration_minutes % 60}m</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/20">
+                <span className="text-muted-foreground">Base Fare</span>
+                <span className="font-medium">৳{selectedRoute.base_fare}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/20">
+                <span className="text-muted-foreground">Counter Stops</span>
+                <span className="font-medium">{selectedRoute.total || 0} stops ({selectedRoute.active || 0} active)</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-muted-foreground">Status</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusBadge(selectedRoute.status)}`}>{selectedRoute.status}</span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Route Dialog */}
       <Dialog open={showAddRoute} onOpenChange={setShowAddRoute}>
         <DialogContent className="glass-card border-border/40">
           <DialogHeader>
@@ -144,7 +201,7 @@ export function RoutesTab() {
             <div className="grid grid-cols-3 gap-4">
               <div><label className="text-xs text-muted-foreground mb-1 block">Distance (km)</label><Input type="number" placeholder="150" value={routeForm.distance_km} onChange={e => setRouteForm(p => ({ ...p, distance_km: e.target.value }))} className="bg-secondary/50" /></div>
               <div><label className="text-xs text-muted-foreground mb-1 block">Time (minutes)</label><Input type="number" placeholder="180" value={routeForm.duration_minutes} onChange={e => setRouteForm(p => ({ ...p, duration_minutes: e.target.value }))} className="bg-secondary/50" /></div>
-              <div><label className="text-xs text-muted-foreground mb-1 block">Base Fare (৳)</label><Input type="number" placeholder="400" value={routeForm.base_fare} onChange={e => setRouteForm(p => ({ ...p, base_fare: e.target.value }))} className="bg-secondary/50 flex-1 border-primary/20 bg-primary/5 text-primary focus-visible:ring-primary/40" /></div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Base Fare (৳)</label><Input type="number" placeholder="400" value={routeForm.base_fare} onChange={e => setRouteForm(p => ({ ...p, base_fare: e.target.value }))} className="bg-secondary/50" /></div>
             </div>
             <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500/80 p-3 rounded-lg text-xs leading-relaxed">
               <strong>Note:</strong> Once created, you must add "Schedules" and "Counter Stops" before passengers can book tickets on this route.

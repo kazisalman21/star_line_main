@@ -108,3 +108,80 @@ SELECT r.id, b.id, '20:00'::TIME, '00:00'::TIME, '{0,1,2,3,4,5,6}', 'active'
 FROM routes r, buses b
 WHERE r.origin = 'Feni' AND r.destination = 'Dhaka' AND b.name = 'Starline Gold-06'
 ON CONFLICT DO NOTHING;
+
+-- ============================
+-- TERMINALS
+-- ============================
+INSERT INTO terminals (name, short_name, location, district, phone, is_main_terminal, sort_order) VALUES
+  ('Dhaka (Fakirapul) Terminal', 'Dhaka',       'Fakirapul, Motijheel',      'Dhaka',        '01700-000001', true,  1),
+  ('Chattogram Terminal',        'Chattogram',  'Dampara, Chattogram',       'Chattogram',   '01700-000002', true,  2),
+  ('Cox''s Bazar Terminal',      'Cox''s Bazar','Bus Stand, Kolatoli',       'Cox''s Bazar', '01700-000003', true,  3),
+  ('Sylhet Terminal',            'Sylhet',      'Kadamtali Bus Stand',       'Sylhet',       '01700-000004', true,  4),
+  ('Comilla Counter',            'Comilla',     'Kandirpar Bus Stand',       'Comilla',      '01700-000005', false, 5),
+  ('Feni Counter',               'Feni',        'Feni Bus Terminal',         'Feni',         '01700-000006', false, 6),
+  ('Noakhali Counter',           'Noakhali',    'Maijdee Bus Stand',         'Noakhali',     '01700-000007', false, 7),
+  ('Lakshmipur Counter',         'Lakshmipur',  'Lakshmipur Bus Stand',      'Lakshmipur',   '01700-000008', false, 8),
+  ('Brahmanbaria Counter',       'B.Baria',     'Brahmanbaria Bus Terminal', 'Brahmanbaria', '01700-000009', false, 9),
+  ('Chandpur Counter',           'Chandpur',    'Chandpur Bus Stand',        'Chandpur',     '01700-000010', false, 10)
+ON CONFLICT DO NOTHING;
+
+-- ============================
+-- ROUTE COUNTERS (Stops along routes)
+-- ============================
+-- Route 1: Dhaka → Chattogram
+INSERT INTO route_counters (route_id, name, location, district, phone, counter_type, status, sort_order)
+SELECT id, 'Dhaka (Fakirapul)', 'Fakirapul, Motijheel', 'Dhaka', '01700-000001', 'Starting Point', 'Active', 1 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram'
+UNION ALL SELECT id, 'Dhaka (Sayedabad Bypass)', 'Sayedabad', 'Dhaka', '—', 'Counter', 'Active', 2 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram'
+UNION ALL SELECT id, 'Daudkandi Counter', 'Daudkandi Highway', 'Comilla', '01700-100001', 'Counter', 'Active', 3 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram'
+UNION ALL SELECT id, 'Comilla Counter', 'Kandirpar', 'Comilla', '01700-000005', 'Counter', 'Active', 4 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram'
+UNION ALL SELECT id, 'Comilla Rest Stop', 'Comilla Highway', 'Comilla', '—', 'Break (20 min)', 'Active', 5 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram'
+UNION ALL SELECT id, 'Feni Counter', 'Feni Bus Terminal', 'Feni', '01700-000006', 'Counter', 'Active', 6 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram'
+UNION ALL SELECT id, 'Sitakunda Counter', 'Sitakunda Bazar', 'Chattogram', '01700-100002', 'Counter', 'Unverified', 7 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram'
+UNION ALL SELECT id, 'Chattogram Terminal', 'Dampara', 'Chattogram', '01700-000002', 'Last Stop', 'Active', 8 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chattogram';
+
+-- Route 2: Dhaka → Cox's Bazar
+INSERT INTO route_counters (route_id, name, location, district, phone, counter_type, status, sort_order)
+SELECT id, 'Dhaka (Fakirapul)', 'Fakirapul, Motijheel', 'Dhaka', '01700-000001', 'Starting Point', 'Active', 1 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Comilla Counter', 'Kandirpar', 'Comilla', '01700-000005', 'Counter', 'Active', 2 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Feni Counter', 'Feni Bus Terminal', 'Feni', '01700-000006', 'Counter', 'Active', 3 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Feni Rest Stop', 'Feni Highway', 'Feni', '—', 'Break (20 min)', 'Active', 4 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Chattogram (Bypass)', 'Kaptai Road Bypass', 'Chattogram', '—', 'Counter', 'Active', 5 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Dohazari Counter', 'Dohazari Bazar', 'Chattogram', '01700-100003', 'Counter', 'Unverified', 6 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Chakaria Counter', 'Chakaria Bus Stand', 'Cox''s Bazar', '01700-100004', 'Counter', 'Active', 7 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Cox''s Bazar Terminal', 'Kolatoli Bus Stand', 'Cox''s Bazar', '01700-000003', 'Last Stop', 'Active', 8 FROM routes WHERE origin = 'Dhaka' AND destination = 'Cox''s Bazar';
+
+-- Route 3: Dhaka → Sylhet
+INSERT INTO route_counters (route_id, name, location, district, phone, counter_type, status, sort_order)
+SELECT id, 'Dhaka (Fakirapul)', 'Fakirapul, Motijheel', 'Dhaka', '01700-000001', 'Starting Point', 'Active', 1 FROM routes WHERE origin = 'Dhaka' AND destination = 'Sylhet'
+UNION ALL SELECT id, 'Kanchpur Toll', 'Kanchpur Bridge', 'Narayanganj', '—', 'Counter', 'Active', 2 FROM routes WHERE origin = 'Dhaka' AND destination = 'Sylhet'
+UNION ALL SELECT id, 'Brahmanbaria Counter', 'B.Baria Bus Terminal', 'Brahmanbaria', '01700-000009', 'Counter', 'Active', 3 FROM routes WHERE origin = 'Dhaka' AND destination = 'Sylhet'
+UNION ALL SELECT id, 'Habiganj Rest Stop', 'Habiganj Highway', 'Habiganj', '—', 'Break (20 min)', 'Active', 4 FROM routes WHERE origin = 'Dhaka' AND destination = 'Sylhet'
+UNION ALL SELECT id, 'Habiganj Counter', 'Habiganj Bus Stand', 'Habiganj', '01700-100005', 'Counter', 'Unverified', 5 FROM routes WHERE origin = 'Dhaka' AND destination = 'Sylhet'
+UNION ALL SELECT id, 'Sylhet Terminal', 'Kadamtali', 'Sylhet', '01700-000004', 'Last Stop', 'Active', 6 FROM routes WHERE origin = 'Dhaka' AND destination = 'Sylhet';
+
+-- Route 4: Chattogram → Cox's Bazar
+INSERT INTO route_counters (route_id, name, location, district, phone, counter_type, status, sort_order)
+SELECT id, 'Chattogram Terminal', 'Dampara', 'Chattogram', '01700-000002', 'Starting Point', 'Active', 1 FROM routes WHERE origin = 'Chattogram' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Patiya Counter', 'Patiya Bazar', 'Chattogram', '01700-100006', 'Counter', 'Unconfirmed', 2 FROM routes WHERE origin = 'Chattogram' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Dohazari Counter', 'Dohazari Bazar', 'Chattogram', '01700-100003', 'Counter', 'Active', 3 FROM routes WHERE origin = 'Chattogram' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Chakaria Counter', 'Chakaria Bus Stand', 'Cox''s Bazar', '01700-100004', 'Counter', 'Active', 4 FROM routes WHERE origin = 'Chattogram' AND destination = 'Cox''s Bazar'
+UNION ALL SELECT id, 'Cox''s Bazar Terminal', 'Kolatoli Bus Stand', 'Cox''s Bazar', '01700-000003', 'Last Stop', 'Active', 5 FROM routes WHERE origin = 'Chattogram' AND destination = 'Cox''s Bazar';
+
+-- Route 5: Dhaka → Noakhali (Need to make sure this route exists, currently in original routes list we added some, let's insert if missing)
+INSERT INTO routes (origin, destination, distance_km, duration_minutes, base_fare, status) VALUES
+  ('Dhaka', 'Noakhali', 165, 270, 500, 'active'),
+  ('Dhaka', 'Chandpur', 115, 210, 450, 'active')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO route_counters (route_id, name, location, district, phone, counter_type, status, sort_order)
+SELECT id, 'Dhaka (Fakirapul)', 'Fakirapul, Motijheel', 'Dhaka', '01700-000001', 'Starting Point', 'Active', 1 FROM routes WHERE origin = 'Dhaka' AND destination = 'Noakhali'
+UNION ALL SELECT id, 'Comilla Counter', 'Kandirpar', 'Comilla', '01700-000005', 'Counter', 'Active', 2 FROM routes WHERE origin = 'Dhaka' AND destination = 'Noakhali'
+UNION ALL SELECT id, 'Laksham Counter', 'Laksham Bazar', 'Comilla', '01700-100007', 'Counter', 'Unverified', 3 FROM routes WHERE origin = 'Dhaka' AND destination = 'Noakhali'
+UNION ALL SELECT id, 'Begumganj Counter', 'Begumganj Bus Stand', 'Noakhali', '01700-100008', 'Counter', 'Active', 4 FROM routes WHERE origin = 'Dhaka' AND destination = 'Noakhali'
+UNION ALL SELECT id, 'Noakhali (Maijdee)', 'Maijdee Bus Stand', 'Noakhali', '01700-000007', 'Last Stop', 'Active', 5 FROM routes WHERE origin = 'Dhaka' AND destination = 'Noakhali';
+
+-- Route 6: Dhaka → Chandpur
+INSERT INTO route_counters (route_id, name, location, district, phone, counter_type, status, sort_order)
+SELECT id, 'Dhaka (Fakirapul)', 'Fakirapul, Motijheel', 'Dhaka', '01700-000001', 'Starting Point', 'Active', 1 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chandpur'
+UNION ALL SELECT id, 'Daudkandi Counter', 'Daudkandi Highway', 'Comilla', '01700-100001', 'Counter', 'Active', 2 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chandpur'
+UNION ALL SELECT id, 'Chandpur', 'Chandpur Bus Stand', 'Chandpur', '01700-000010', 'Last Stop', 'Unconfirmed', 3 FROM routes WHERE origin = 'Dhaka' AND destination = 'Chandpur';

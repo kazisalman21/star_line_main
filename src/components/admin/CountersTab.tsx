@@ -6,9 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-// Use dynamic imports for counterService since it's a separate file
 export function CountersTab() {
   const [terminals, setTerminals] = useState<any[]>([]);
+  const [routesWithCounters, setRoutesWithCounters] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddTerminal, setShowAddTerminal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -18,8 +18,12 @@ export function CountersTab() {
   const load = async () => {
     try {
       const mod = await import('@/services/counterService');
-      const data = await mod.getAllTerminals();
-      setTerminals(data || []);
+      const [tData, rcData] = await Promise.all([
+        mod.getAllTerminals(),
+        mod.getRoutesWithCounters(),
+      ]);
+      setTerminals(tData || []);
+      setRoutesWithCounters(rcData || []);
     } catch (e) {
       console.warn("Could not load terminals:", e);
     }
@@ -78,6 +82,7 @@ export function CountersTab() {
         </div>
       </div>
 
+      {/* Terminal Cards Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {terminals.filter(t => !searchQuery || t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.district.toLowerCase().includes(searchQuery.toLowerCase())).map((terminal, i) => (
           <motion.div key={terminal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="glass-card p-5 card-hover">
@@ -92,26 +97,48 @@ export function CountersTab() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7"><Pencil className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(terminal.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
               </div>
             </div>
-            <div className="mt-4 grid gap-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5" /> <span className="font-medium text-foreground">{terminal.district}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Phone className="w-3.5 h-3.5" /> <span>{terminal.phone}</span>
-              </div>
+            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {terminal.phone}</span>
+              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {terminal.district}</span>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              {terminal.is_main_terminal && <span className="text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Main Hub</span>}
-              <span className="text-[10px] bg-success/15 text-success px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Active</span>
+            <div className="mt-2 flex items-center gap-2">
+              {terminal.is_main_terminal && <span className="text-xs bg-primary/15 text-primary px-2 py-0.5 rounded-full font-medium">Main Terminal</span>}
+              <span className="text-xs bg-success/15 text-success px-2 py-0.5 rounded-full font-medium">Active</span>
             </div>
           </motion.div>
         ))}
         {terminals.length === 0 && <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 text-muted-foreground glass-card">No terminals found. Click "Add Terminal".</div>}
       </div>
 
+      {/* ============= Route-Counter Associations (from reference) ============= */}
+      {routesWithCounters.length > 0 && (
+        <div className="glass-card p-6">
+          <h3 className="font-display font-semibold mb-4">Route-Counter Associations</h3>
+          <div className="space-y-3">
+            {routesWithCounters.map((route) => (
+              <div key={route.id} className="flex items-center justify-between bg-secondary/30 p-4 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Route className="w-4 h-4 text-primary" />
+                  <div>
+                    <div className="font-medium text-sm">{route.from} → {route.to}</div>
+                    <div className="text-xs text-muted-foreground">{route.counters.length} stops</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground hidden sm:block">{route.counters.filter((c: any) => c.status === 'Active').length} active</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add Terminal Dialog */}
       <Dialog open={showAddTerminal} onOpenChange={setShowAddTerminal}>
         <DialogContent className="glass-card border-border/40">
           <DialogHeader>
