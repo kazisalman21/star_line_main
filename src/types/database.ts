@@ -380,6 +380,92 @@ export interface Database {
           },
         ];
       };
+      terminals: {
+        Row: {
+          id: string;
+          name: string;
+          short_name: string;
+          location: string;
+          district: string;
+          phone: string;
+          is_main_terminal: boolean;
+          status: 'active' | 'inactive';
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          short_name: string;
+          location: string;
+          district: string;
+          phone?: string;
+          is_main_terminal?: boolean;
+          status?: 'active' | 'inactive';
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          short_name?: string;
+          location?: string;
+          district?: string;
+          phone?: string;
+          is_main_terminal?: boolean;
+          status?: 'active' | 'inactive';
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      route_counters: {
+        Row: {
+          id: string;
+          route_id: string;
+          name: string;
+          location: string;
+          district: string;
+          phone: string;
+          counter_type: 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop';
+          status: 'Active' | 'Unverified' | 'Unconfirmed';
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          route_id: string;
+          name: string;
+          location: string;
+          district: string;
+          phone?: string;
+          counter_type?: 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop';
+          status?: 'Active' | 'Unverified' | 'Unconfirmed';
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          route_id?: string;
+          name?: string;
+          location?: string;
+          district?: string;
+          phone?: string;
+          counter_type?: 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop';
+          status?: 'Active' | 'Unverified' | 'Unconfirmed';
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'route_counters_route_id_fkey';
+            columns: ['route_id'];
+            isOneToOne: false;
+            referencedRelation: 'routes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

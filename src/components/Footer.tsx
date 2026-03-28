@@ -18,7 +18,7 @@ export default function Footer() {
           <div>
             <h4 className="font-display font-semibold text-sm mb-4 tracking-wide uppercase text-foreground/80">Quick Links</h4>
             <div className="flex flex-col gap-2.5">
-              {[['/', 'Home'], ['/search', 'Search Trips'], ['/routes', 'Routes & Fleet'], ['/manage-booking', 'Manage Booking']].map(([to, label]) => (
+              {[['/', 'Home'], ['/search', 'Search Trips'], ['/routes', 'Routes & Fleet'], ['/counters', 'Counters'], ['/manage-booking', 'Manage Booking']].map(([to, label]) => (
                 <Link key={to} to={to} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
               ))}
             </div>

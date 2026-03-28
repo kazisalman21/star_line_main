@@ -456,7 +456,7 @@ export async function getAllBuses() {
   return data || [];
 }
 
-export async function createBus(bus: { name: string; type: string; total_seats: number; registration_number: string; amenities?: any }) {
+export async function createBus(bus: { name: string; type: 'AC' | 'Non-AC' | 'Sleeper'; total_seats: number; registration_number: string; amenities?: any }) {
   return supabase.from('buses').insert(bus).select().single();
 }
 
@@ -530,7 +530,7 @@ export async function getAdminBookings(options: {
     .range(from, to);
 
   if (status && status !== 'all') {
-    query = query.eq('status', status);
+    query = query.eq('status', status as 'pending' | 'confirmed' | 'cancelled' | 'completed');
   }
 
   if (search) {
@@ -541,6 +541,6 @@ export async function getAdminBookings(options: {
   return { bookings: data || [], total: count || 0, page, limit };
 }
 
-export async function updateBookingStatus(id: string, status: string) {
+export async function updateBookingStatus(id: string, status: 'pending' | 'confirmed' | 'cancelled' | 'completed') {
   return supabase.from('bookings').update({ status }).eq('id', id);
 }

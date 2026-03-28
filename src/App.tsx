@@ -13,6 +13,7 @@ import TicketConfirmation from "./pages/TicketConfirmation.tsx";
 import ManageBooking from "./pages/ManageBooking.tsx";
 import LiveTracking from "./pages/LiveTracking.tsx";
 import RoutesFleet from "./pages/RoutesFleet.tsx";
+import Counters from "./pages/Counters.tsx";
 import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import Login from "./pages/Login.tsx";
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/search" element={<SearchResults />} />
               <Route path="/seat-selection" element={<SeatSelection />} />
               <Route path="/routes" element={<RoutesFleet />} />
+              <Route path="/counters" element={<Counters />} />
               <Route path="/support" element={<Support />} />
               <Route path="/live-tracking" element={<LiveTracking />} />
               <Route path="/terms" element={<TermsOfService />} />

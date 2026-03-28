@@ -336,3 +336,55 @@ CREATE POLICY "Admins can manage trip tracking"
 
 CREATE INDEX idx_trip_tracking_schedule ON trip_tracking(schedule_id);
 CREATE INDEX idx_trip_tracking_date ON trip_tracking(travel_date);
+
+-- ============================================================
+-- 10. TERMINALS — counter locations
+-- ============================================================
+CREATE TABLE terminals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  short_name TEXT NOT NULL,
+  location TEXT NOT NULL,
+  district TEXT NOT NULL,
+  phone TEXT NOT NULL DEFAULT '—',
+  is_main_terminal BOOLEAN NOT NULL DEFAULT false,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE terminals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view terminals"
+  ON terminals FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage terminals"
+  ON terminals FOR ALL
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- ============================================================
+-- 11. ROUTE_COUNTERS — stops along a route (ordered)
+-- ============================================================
+CREATE TABLE route_counters (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  route_id UUID NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  location TEXT NOT NULL,
+  district TEXT NOT NULL,
+  phone TEXT NOT NULL DEFAULT '—',
+  counter_type TEXT NOT NULL DEFAULT 'Counter' CHECK (counter_type IN ('Starting Point', 'Counter', 'Break (20 min)', 'Last Stop')),
+  status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Unverified', 'Unconfirmed')),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE route_counters ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view route counters"
+  ON route_counters FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage route counters"
+  ON route_counters FOR ALL
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+CREATE INDEX idx_route_counters_route ON route_counters(route_id);

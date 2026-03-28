@@ -10,6 +10,7 @@ const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/search', label: 'Search Trips' },
   { to: '/routes', label: 'Routes & Fleet' },
+  { to: '/counters', label: 'Counters' },
   { to: '/manage-booking', label: 'My Booking' },
   { to: '/live-tracking', label: 'Live Tracking' },
   { to: '/support', label: 'Support' },
