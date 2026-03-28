@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getAllRoutes, createRoute, deleteRoute, updateRoute } from '@/services/adminService';
+import { useConfirmDialog } from '@/components/admin/ConfirmDialog';
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
@@ -20,6 +21,7 @@ export function RoutesTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddRoute, setShowAddRoute] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { confirm, DialogComponent } = useConfirmDialog();
   
   const [routeForm, setRouteForm] = useState({ origin: '', destination: '', distance_km: '', duration_minutes: '', base_fare: '' });
 
@@ -46,10 +48,15 @@ export function RoutesTab() {
     load();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this route? ALL schedules and bookings for this route will be impacted!')) return;
-    await deleteRoute(id);
-    load();
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Delete Route Permanently',
+      description: 'This will permanently remove this route. All schedules, bookings, and counter stops associated with it will be impacted.',
+      confirmText: 'Delete Route',
+      variant: 'danger',
+      icon: 'warning',
+      onConfirm: async () => { await deleteRoute(id); load(); },
+    });
   };
 
   const handleToggleStatus = async (id: string, current: string) => {
@@ -151,6 +158,7 @@ export function RoutesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {DialogComponent}
     </div>
   );
 }

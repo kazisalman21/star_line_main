@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getAdminBookings, updateBookingStatus } from '@/services/adminService';
+import { useConfirmDialog } from '@/components/admin/ConfirmDialog';
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
@@ -28,6 +29,7 @@ export function BookingsTab() {
 
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const { confirm, DialogComponent } = useConfirmDialog();
 
   const load = async () => {
     setLoading(true);
@@ -48,10 +50,15 @@ export function BookingsTab() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const handleCancel = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) return;
-    await updateBookingStatus(id, 'cancelled');
-    load();
+  const handleCancel = (id: string) => {
+    confirm({
+      title: 'Cancel Booking',
+      description: 'The passenger will be notified and any payment will need to be refunded. This action cannot be reversed.',
+      confirmText: 'Cancel Booking',
+      variant: 'danger',
+      icon: 'cancel',
+      onConfirm: async () => { await updateBookingStatus(id, 'cancelled'); load(); },
+    });
   };
 
   return (
@@ -177,6 +184,7 @@ export function BookingsTab() {
           )}
         </DialogContent>
       </Dialog>
+      {DialogComponent}
     </div>
   );
 }

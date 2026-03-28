@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Search, Plus, MapPin, Phone, Pencil, Trash2, ChevronRight, Route, Check, Loader2 } from 'lucide-react';
+import { useConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -11,6 +12,7 @@ export function CountersTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddTerminal, setShowAddTerminal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { confirm, DialogComponent } = useConfirmDialog();
   const [terminalForm, setTerminalForm] = useState({ name: '', shortName: '', location: '', district: '', phone: '', isMain: false });
 
   const load = async () => {
@@ -43,11 +45,19 @@ export function CountersTab() {
     load();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this terminal?')) return;
-    const mod = await import('@/services/counterService');
-    await mod.deleteTerminal(id);
-    load();
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Remove Terminal',
+      description: 'This terminal will be permanently removed from the system. Routes referencing this terminal may need to be updated.',
+      confirmText: 'Delete Terminal',
+      variant: 'danger',
+      icon: 'delete',
+      onConfirm: async () => {
+        const mod = await import('@/services/counterService');
+        await mod.deleteTerminal(id);
+        load();
+      },
+    });
   };
 
   return (
@@ -129,6 +139,7 @@ export function CountersTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {DialogComponent}
     </div>
   );
 }

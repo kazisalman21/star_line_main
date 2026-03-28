@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getAllBuses, getFleetStatus, createBus, deleteBus, updateBus, FleetStatus } from '@/services/adminService';
+import { useConfirmDialog } from '@/components/admin/ConfirmDialog';
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
@@ -22,6 +23,7 @@ export function FleetTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddBus, setShowAddBus] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { confirm, DialogComponent } = useConfirmDialog();
   
   const [busForm, setBusForm] = useState({ name: '', regNo: '', type: 'AC Business', seats: '36' });
 
@@ -48,10 +50,15 @@ export function FleetTab() {
     load();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this bus?')) return;
-    await deleteBus(id);
-    load();
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Remove Bus from Fleet',
+      description: 'This bus will be permanently removed from your fleet. Any active schedules assigned to this bus will also be affected.',
+      confirmText: 'Delete Bus',
+      variant: 'danger',
+      icon: 'delete',
+      onConfirm: async () => { await deleteBus(id); load(); },
+    });
   };
 
   const handleToggleStatus = async (id: string, current: string) => {
@@ -163,6 +170,7 @@ export function FleetTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {DialogComponent}
     </div>
   );
 }

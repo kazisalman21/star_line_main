@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getAllSchedules, getAllRoutes, getAllBuses, createSchedule, deleteSchedule, updateSchedule } from '@/services/adminService';
+import { useConfirmDialog } from '@/components/admin/ConfirmDialog';
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
@@ -22,6 +23,7 @@ export function SchedulesTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { confirm, DialogComponent } = useConfirmDialog();
   
   const [form, setForm] = useState({ route_id: '', bus_id: '', departure_time: '', days: [0,1,2,3,4,5,6] as number[] });
 
@@ -48,10 +50,15 @@ export function SchedulesTab() {
     load();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Cancel this schedule?')) return;
-    await deleteSchedule(id);
-    load();
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Cancel Schedule',
+      description: 'This schedule will be removed. Future bookings for this departure time will no longer be available.',
+      confirmText: 'Remove Schedule',
+      variant: 'warning',
+      icon: 'cancel',
+      onConfirm: async () => { await deleteSchedule(id); load(); },
+    });
   };
 
   return (
@@ -148,6 +155,7 @@ export function SchedulesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {DialogComponent}
     </div>
   );
 }
