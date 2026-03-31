@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Plus, Eye, Pencil, Trash2, Route, Copy, Filter } from 'lucide-react';
 import { useStore } from '@/data/counterStore';
@@ -12,7 +12,10 @@ import RouteBuilder from './RouteBuilder';
 import RouteTimelinePreview from './RouteTimelinePreview';
 
 export default function RouteManagementSection() {
-  const { routes, deleteRoute, duplicateRoute } = useStore();
+  const { routes, deleteRoute, duplicateRoute, loadAll } = useStore();
+
+  useEffect(() => { loadAll(); }, []);
+
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<RouteStatus | 'all'>('all');
   const [showFilters, setShowFilters] = useState(false);

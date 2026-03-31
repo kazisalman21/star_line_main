@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Filter, Building2, Phone, MapPin, Eye, Pencil, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Filter, Building2, Phone, MapPin, Eye, Pencil, AlertTriangle, Loader2 } from 'lucide-react';
 import { useStore } from '@/data/counterStore';
 import type { Counter, CounterType, CounterStatus } from '@/data/types';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,10 @@ import { CounterStatusBadge } from './CounterStatusBadge';
 import { CounterFormDialog } from './CounterFormDialog';
 
 export default function CounterManagementSection() {
-  const { counters, addCounter, updateCounter, setCounterStatus, getCounterUsageCount } = useStore();
+  const { counters, loading, addCounter, updateCounter, setCounterStatus, getCounterUsageCount, loadCounters, loadRoutes } = useStore();
+
+  useEffect(() => { loadCounters(); loadRoutes(); }, []);
+
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<CounterType | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<CounterStatus | 'all'>('all');

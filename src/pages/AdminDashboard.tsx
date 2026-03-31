@@ -8,8 +8,8 @@ import PageHead from '@/components/PageHead';
 // Import newly separated tab components
 import { OverviewTab } from '@/components/admin/OverviewTab';
 import { FleetTab } from '@/components/admin/FleetTab';
-import { CountersTab } from '@/components/admin/CountersTab';
-import { RoutesTab } from '@/components/admin/RoutesTab';
+import CounterManagementSection from '@/components/admin/CounterManagementSection';
+import RouteManagementSection from '@/components/admin/RouteManagementSection';
 import { BookingsTab } from '@/components/admin/BookingsTab';
 import { SchedulesTab } from '@/components/admin/SchedulesTab';
 import { DriversTab } from '@/components/admin/DriversTab';
@@ -35,8 +35,8 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case 'overview': return <OverviewTab />;
       case 'fleet': return <FleetTab />;
-      case 'counters': return <CountersTab />;
-      case 'routes': return <RoutesTab />;
+      case 'counters': return <CounterManagementSection />;
+      case 'routes': return <RouteManagementSection />;
       case 'schedules': return <SchedulesTab />;
       case 'bookings': return <BookingsTab />;
       case 'drivers': return <DriversTab />;
