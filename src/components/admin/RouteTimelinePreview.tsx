@@ -27,7 +27,7 @@ export default function RouteTimelinePreview({ points }: Props) {
         {sorted.map((point, idx) => (
           <div key={point.id} className="flex items-start gap-3 relative">
             {idx < sorted.length - 1 && (
-              <div className="absolute left-[15px] top-8 w-px bg-border/40" style={{ height: 'calc(100% - 8px)' }} />
+              <div className="absolute left-[15px] top-8 w-px bg-border/40 h-[calc(100%-8px)]" />
             )}
             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 ${
               idx === 0 ? 'bg-success/20 text-success' :
