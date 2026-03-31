@@ -389,9 +389,13 @@ export interface Database {
           district: string;
           phone: string;
           is_main_terminal: boolean;
-          status: 'active' | 'inactive';
+          counter_type: string;
+          notes: string;
+          map_location: string;
+          status: 'active' | 'inactive' | 'hold' | 'removed';
           sort_order: number;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -401,9 +405,13 @@ export interface Database {
           district: string;
           phone?: string;
           is_main_terminal?: boolean;
-          status?: 'active' | 'inactive';
+          counter_type?: string;
+          notes?: string;
+          map_location?: string;
+          status?: 'active' | 'inactive' | 'hold' | 'removed';
           sort_order?: number;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -413,9 +421,13 @@ export interface Database {
           district?: string;
           phone?: string;
           is_main_terminal?: boolean;
-          status?: 'active' | 'inactive';
+          counter_type?: string;
+          notes?: string;
+          map_location?: string;
+          status?: 'active' | 'inactive' | 'hold' | 'removed';
           sort_order?: number;
           created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -427,10 +439,19 @@ export interface Database {
           location: string;
           district: string;
           phone: string;
-          counter_type: 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop';
-          status: 'Active' | 'Unverified' | 'Unconfirmed';
+          counter_type: string;
+          status: string;
           sort_order: number;
+          terminal_id: string | null;
+          custom_point_name: string;
+          halt_minutes: number;
+          break_minutes: number;
+          is_boarding_allowed: boolean;
+          is_dropping_allowed: boolean;
+          is_visible_to_customer: boolean;
+          notes: string;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -439,10 +460,19 @@ export interface Database {
           location: string;
           district: string;
           phone?: string;
-          counter_type?: 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop';
-          status?: 'Active' | 'Unverified' | 'Unconfirmed';
+          counter_type?: string;
+          status?: string;
           sort_order?: number;
+          terminal_id?: string | null;
+          custom_point_name?: string;
+          halt_minutes?: number;
+          break_minutes?: number;
+          is_boarding_allowed?: boolean;
+          is_dropping_allowed?: boolean;
+          is_visible_to_customer?: boolean;
+          notes?: string;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -451,10 +481,19 @@ export interface Database {
           location?: string;
           district?: string;
           phone?: string;
-          counter_type?: 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop';
-          status?: 'Active' | 'Unverified' | 'Unconfirmed';
+          counter_type?: string;
+          status?: string;
           sort_order?: number;
+          terminal_id?: string | null;
+          custom_point_name?: string;
+          halt_minutes?: number;
+          break_minutes?: number;
+          is_boarding_allowed?: boolean;
+          is_dropping_allowed?: boolean;
+          is_visible_to_customer?: boolean;
+          notes?: string;
           created_at?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -462,6 +501,13 @@ export interface Database {
             columns: ['route_id'];
             isOneToOne: false;
             referencedRelation: 'routes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'route_counters_terminal_id_fkey';
+            columns: ['terminal_id'];
+            isOneToOne: false;
+            referencedRelation: 'terminals';
             referencedColumns: ['id'];
           },
         ];
@@ -473,7 +519,7 @@ export interface Database {
       user_role: 'passenger' | 'admin';
       bus_type: 'AC' | 'Non-AC' | 'Sleeper';
       bus_status: 'active' | 'maintenance' | 'retired';
-      route_status: 'active' | 'inactive';
+      route_status: 'active' | 'inactive' | 'draft' | 'hold' | 'archived';
       schedule_status: 'active' | 'cancelled' | 'completed';
       seat_type: 'standard' | 'premium' | 'ladies';
       booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
