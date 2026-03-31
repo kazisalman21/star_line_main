@@ -24,7 +24,7 @@
 ---
 
 ### Phase 2: Supabase Backend Setup & Auth
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 **Objective**: Set up Supabase project, design database schema (users, routes, buses, bookings, seats), implement authentication (email/password + Google + Facebook SSO), and create Row Level Security policies.
 **Deliverable**: Working auth flow with user registration, login, SSO, and profile page.
 
@@ -59,6 +59,6 @@
 ---
 
 ### Phase 7: Testing, Optimization & Deployment
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: End-to-end testing (Playwright), performance optimization, Lighthouse audit, security review, and production deployment to Vercel + Supabase.
 **Deliverable**: Production-ready app deployed and accessible.

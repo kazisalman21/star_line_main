@@ -5,9 +5,12 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Check .env.local for VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY'
+  console.error(
+    'Missing Supabase environment variables.\n' +
+    'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env.local file.\n' +
+    'See .env.example for reference.'
   );
+  throw new Error('Missing Supabase configuration. See console for details.');
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
