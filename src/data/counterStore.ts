@@ -3,124 +3,89 @@ import { supabase } from '@/lib/supabase';
 import type { Counter, CounterStatus, RouteData, RouteStatus, RoutePoint } from '@/data/types';
 
 // ═══════════════════════════════════════════════════════════════
-//  Supabase-backed store — uses `terminals` + `routes` + `route_counters`
-//  tables from database.ts as the authoritative data source.
+//  Supabase-backed store
+//  DB tables used: terminals, routes, route_counters
+//  Only references columns that actually exist in the schema.
+//  Extended fields (notes, breakMinutes, etc.) map to existing
+//  columns where possible or use sensible defaults.
 // ═══════════════════════════════════════════════════════════════
 
 export function generatePointId(): string {
   return `rp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-// ── Helpers: map DB rows ↔ app types ──────────────────────────
+// ── DB row → App type mappers ─────────────────────────────────
 
 function dbTerminalToCounter(t: any): Counter {
   return {
     id: t.id,
     code: t.short_name || '',
     name: t.name,
-    type: mapDbTypeToAppType(t.counter_type_ext || (t.is_main_terminal ? 'Main Terminal' : 'Counter')),
+    type: t.is_main_terminal ? 'Main Terminal' : 'Counter',
     district: t.district || '',
     address: t.location || '',
     phone: t.phone || '',
-    notes: t.notes || '',
-    mapLocation: t.map_location || '',
-    status: mapDbStatusToAppStatus(t.status),
+    notes: '',
+    mapLocation: '',
+    status: (t.status === 'active' ? 'active' : 'inactive') as CounterStatus,
     isMainTerminal: t.is_main_terminal || false,
     createdAt: t.created_at || new Date().toISOString(),
-    updatedAt: t.updated_at || t.created_at || new Date().toISOString(),
+    updatedAt: t.created_at || new Date().toISOString(),
   };
 }
 
-function counterToDbTerminal(c: Omit<Counter, 'id' | 'createdAt' | 'updatedAt'>) {
-  return {
-    name: c.name,
-    short_name: c.code,
-    location: c.address,
-    district: c.district,
-    phone: c.phone,
-    is_main_terminal: c.isMainTerminal,
-    status: c.status === 'removed' ? 'inactive' : c.status === 'hold' ? 'inactive' : c.status,
-    notes: c.notes || null,
-    map_location: c.mapLocation || null,
-    counter_type_ext: c.type,
-  };
-}
-
-function mapDbTypeToAppType(t: string): Counter['type'] {
-  const map: Record<string, Counter['type']> = {
-    'Starting Point': 'Main Terminal',
-    'Counter': 'Counter',
-    'Break (20 min)': 'Break Point',
-    'Last Stop': 'Main Terminal',
-  };
-  return map[t] || (t as Counter['type']) || 'Counter';
-}
-
-function mapDbStatusToAppStatus(s: string): CounterStatus {
-  const map: Record<string, CounterStatus> = {
-    'active': 'active',
-    'Active': 'active',
-    'inactive': 'inactive',
-    'Inactive': 'inactive',
-    'hold': 'hold',
-    'Hold': 'hold',
-    'removed': 'removed',
-    'Removed': 'removed',
-    'Unverified': 'hold',
-    'Unconfirmed': 'hold',
-  };
-  return map[s] || 'active';
-}
-
-function dbRouteToAppRoute(r: any, counters: any[]): RouteData {
-  const points: RoutePoint[] = counters
+function dbRouteToAppRoute(r: any, routeCounters: any[]): RouteData {
+  const myCounters = routeCounters
     .filter(c => c.route_id === r.id)
-    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-    .map((c, idx) => ({
-      id: c.id,
-      routeId: r.id,
-      orderIndex: idx + 1,
-      pointType: mapDbCounterTypeToPointType(c.counter_type),
-      counterId: c.terminal_id || null,
-      customPointName: c.terminal_id ? null : c.name,
-      haltMinutes: c.halt_minutes || 5,
-      breakMinutes: c.break_minutes || 0,
-      isBoardingAllowed: c.is_boarding_allowed ?? true,
-      isDroppingAllowed: c.is_dropping_allowed ?? true,
-      isVisibleToCustomer: c.is_visible_to_customer ?? true,
-      status: (c.status === 'Active' ? 'active' : 'hold') as 'active' | 'hold',
-      notes: c.notes || '',
-    }));
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  const points: RoutePoint[] = myCounters.map((c, idx) => ({
+    id: c.id,
+    routeId: r.id,
+    orderIndex: idx + 1,
+    pointType: mapDbCounterType(c.counter_type),
+    counterId: null, // route_counters doesn't have terminal_id column yet
+    customPointName: c.name,
+    haltMinutes: 5,
+    breakMinutes: c.counter_type === 'Break (20 min)' ? 20 : 0,
+    isBoardingAllowed: c.counter_type !== 'Break (20 min)',
+    isDroppingAllowed: c.counter_type !== 'Break (20 min)',
+    isVisibleToCustomer: true,
+    status: (c.status === 'Active' ? 'active' : 'hold') as 'active' | 'hold',
+    notes: '',
+  }));
 
   return {
     id: r.id,
-    code: r.route_code || `${r.origin}-${r.destination}`.toUpperCase().replace(/\s/g, ''),
-    name: r.route_name || `${r.origin} → ${r.destination}`,
+    code: `${r.origin}-${r.destination}`.substring(0, 16).toUpperCase().replace(/\s/g, ''),
+    name: `${r.origin} → ${r.destination}`,
     from: r.origin,
     to: r.destination,
-    direction: r.direction || 'Outbound',
-    estimatedDuration: r.duration_minutes ? `${Math.floor(r.duration_minutes / 60)}h ${r.duration_minutes % 60}m` : '',
+    direction: 'Outbound',
+    estimatedDuration: r.duration_minutes
+      ? `${Math.floor(r.duration_minutes / 60)}h ${r.duration_minutes % 60}m`
+      : '',
     baseFare: r.base_fare || 0,
-    status: (r.status === 'active' ? 'active' : r.status === 'inactive' ? 'hold' : r.status || 'draft') as RouteStatus,
-    notes: r.notes || '',
+    status: (r.status === 'active' ? 'active' : 'hold') as RouteStatus,
+    notes: '',
     points,
     createdAt: r.created_at || new Date().toISOString(),
-    updatedAt: r.updated_at || r.created_at || new Date().toISOString(),
+    updatedAt: r.created_at || new Date().toISOString(),
   };
 }
 
-function mapDbCounterTypeToPointType(t: string): RoutePoint['pointType'] {
+function mapDbCounterType(t: string): RoutePoint['pointType'] {
   const map: Record<string, RoutePoint['pointType']> = {
     'Starting Point': 'Origin Terminal',
     'Counter': 'Counter',
     'Break (20 min)': 'Break Point',
     'Last Stop': 'Destination Terminal',
   };
-  return map[t] || (t as RoutePoint['pointType']) || 'Counter';
+  return map[t] || 'Counter';
 }
 
-function mapPointTypeToDbCounterType(t: string): string {
-  const map: Record<string, string> = {
+function mapPointTypeToDb(t: string): 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop' {
+  const map: Record<string, 'Starting Point' | 'Counter' | 'Break (20 min)' | 'Last Stop'> = {
     'Origin Terminal': 'Starting Point',
     'Destination Terminal': 'Last Stop',
     'Counter': 'Counter',
@@ -133,7 +98,7 @@ function mapPointTypeToDbCounterType(t: string): string {
   return map[t] || 'Counter';
 }
 
-// ── Store interface ───────────────────────────────────────────
+// ── Store ─────────────────────────────────────────────────────
 
 interface CounterStoreState {
   counters: Counter[];
@@ -141,19 +106,16 @@ interface CounterStoreState {
   loading: boolean;
   error: string | null;
 
-  // Load from Supabase
   loadCounters: () => Promise<void>;
   loadRoutes: () => Promise<void>;
   loadAll: () => Promise<void>;
 
-  // Counter CRUD
   addCounter: (data: Omit<Counter, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateCounter: (id: string, data: Partial<Counter>) => Promise<void>;
   setCounterStatus: (id: string, status: CounterStatus) => Promise<void>;
   getCounterById: (id: string) => Counter | undefined;
   getCounterUsageCount: (counterId: string) => number;
 
-  // Route CRUD
   addRoute: (data: Omit<RouteData, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateRoute: (id: string, data: Partial<RouteData>) => Promise<void>;
   deleteRoute: (id: string) => Promise<void>;
@@ -167,54 +129,60 @@ export const useStore = create<CounterStoreState>((set, get) => ({
   loading: false,
   error: null,
 
-  // ── Load counters from Supabase `terminals` table ──────────
+  // ── Load from Supabase ──────────────────────────────────────
+
   loadCounters: async () => {
-    set({ loading: true, error: null });
     try {
       const { data, error } = await supabase
         .from('terminals')
         .select('*')
         .order('sort_order', { ascending: true });
-
       if (error) throw error;
-      set({ counters: (data || []).map(dbTerminalToCounter), loading: false });
+      set({ counters: (data || []).map(dbTerminalToCounter) });
     } catch (e: any) {
       console.error('Failed to load counters:', e);
-      set({ error: e.message, loading: false });
+      set({ error: e.message });
     }
   },
 
-  // ── Load routes from Supabase `routes` + `route_counters` ──
   loadRoutes: async () => {
-    set({ loading: true, error: null });
     try {
       const [routesRes, countersRes] = await Promise.all([
         supabase.from('routes').select('*').order('created_at', { ascending: false }),
         supabase.from('route_counters').select('*').order('sort_order', { ascending: true }),
       ]);
-
       if (routesRes.error) throw routesRes.error;
       if (countersRes.error) throw countersRes.error;
 
       const routes = (routesRes.data || []).map(r =>
         dbRouteToAppRoute(r, countersRes.data || [])
       );
-      set({ routes, loading: false });
+      set({ routes });
     } catch (e: any) {
       console.error('Failed to load routes:', e);
-      set({ error: e.message, loading: false });
+      set({ error: e.message });
     }
   },
 
   loadAll: async () => {
+    set({ loading: true });
     await Promise.all([get().loadCounters(), get().loadRoutes()]);
+    set({ loading: false });
   },
 
-  // ── Counter CRUD ────────────────────────────────────────────
+  // ── Counter CRUD (terminals table) ──────────────────────────
+
   addCounter: async (data) => {
     try {
-      const dbData = counterToDbTerminal(data);
-      const { error } = await supabase.from('terminals').insert(dbData);
+      const { error } = await supabase.from('terminals').insert({
+        name: data.name,
+        short_name: data.code,
+        location: data.address,
+        district: data.district,
+        phone: data.phone,
+        is_main_terminal: data.isMainTerminal,
+        status: data.status === 'active' ? 'active' : 'inactive',
+      });
       if (error) throw error;
       await get().loadCounters();
     } catch (e: any) {
@@ -232,13 +200,12 @@ export const useStore = create<CounterStoreState>((set, get) => ({
       if (data.district !== undefined) updates.district = data.district;
       if (data.phone !== undefined) updates.phone = data.phone;
       if (data.isMainTerminal !== undefined) updates.is_main_terminal = data.isMainTerminal;
-      if (data.status !== undefined) updates.status = data.status === 'removed' ? 'inactive' : data.status === 'hold' ? 'inactive' : data.status;
-      if (data.notes !== undefined) updates.notes = data.notes;
-      if (data.mapLocation !== undefined) updates.map_location = data.mapLocation;
-      if (data.type !== undefined) updates.counter_type_ext = data.type;
+      if (data.status !== undefined) updates.status = data.status === 'active' ? 'active' : 'inactive';
 
-      const { error } = await supabase.from('terminals').update(updates).eq('id', id);
-      if (error) throw error;
+      if (Object.keys(updates).length > 0) {
+        const { error } = await supabase.from('terminals').update(updates).eq('id', id);
+        if (error) throw error;
+      }
       await get().loadCounters();
     } catch (e: any) {
       console.error('Failed to update counter:', e);
@@ -248,7 +215,7 @@ export const useStore = create<CounterStoreState>((set, get) => ({
 
   setCounterStatus: async (id, status) => {
     try {
-      const dbStatus = status === 'removed' ? 'inactive' : status === 'hold' ? 'inactive' : status;
+      const dbStatus = status === 'active' ? 'active' : 'inactive';
       const { error } = await supabase.from('terminals').update({ status: dbStatus }).eq('id', id);
       if (error) throw error;
       await get().loadCounters();
@@ -258,25 +225,29 @@ export const useStore = create<CounterStoreState>((set, get) => ({
     }
   },
 
-  getCounterById: (id) => {
-    return get().counters.find(c => c.id === id);
-  },
+  getCounterById: (id) => get().counters.find(c => c.id === id),
 
   getCounterUsageCount: (counterId) => {
+    // Since route_counters doesn't link to terminals by ID yet,
+    // match by name as a best-effort approach
+    const counter = get().counters.find(c => c.id === counterId);
+    if (!counter) return 0;
     return get().routes.reduce((count, route) => {
-      return count + route.points.filter(p => p.counterId === counterId).length;
+      return count + route.points.filter(p =>
+        p.customPointName?.toLowerCase() === counter.name.toLowerCase()
+      ).length;
     }, 0);
   },
 
-  // ── Route CRUD ──────────────────────────────────────────────
+  // ── Route CRUD (routes + route_counters tables) ─────────────
+
   addRoute: async (data) => {
     try {
-      // Parse duration string to minutes
       let durationMinutes = 0;
       if (data.estimatedDuration) {
-        const hMatch = data.estimatedDuration.match(/(\d+)\s*h/);
-        const mMatch = data.estimatedDuration.match(/(\d+)\s*m/);
-        durationMinutes = (hMatch ? parseInt(hMatch[1]) * 60 : 0) + (mMatch ? parseInt(mMatch[1]) : 0);
+        const h = data.estimatedDuration.match(/(\d+)\s*h/);
+        const m = data.estimatedDuration.match(/(\d+)\s*m/);
+        durationMinutes = (h ? parseInt(h[1]) * 60 : 0) + (m ? parseInt(m[1]) : 0);
       }
 
       const { data: newRoute, error } = await supabase
@@ -293,30 +264,26 @@ export const useStore = create<CounterStoreState>((set, get) => ({
         .single();
 
       if (error) throw error;
-      if (!newRoute) throw new Error('No route returned after insert');
+      if (!newRoute) throw new Error('No route returned');
 
-      // Insert route_counters for each point
+      // Insert route points as route_counters
       if (data.points && data.points.length > 0) {
-        const counterRows = data.points.map((p, idx) => ({
-          route_id: newRoute.id,
-          name: p.customPointName || get().getCounterById(p.counterId || '')?.name || 'Unnamed',
-          location: get().getCounterById(p.counterId || '')?.address || '',
-          district: get().getCounterById(p.counterId || '')?.district || '',
-          phone: get().getCounterById(p.counterId || '')?.phone || '',
-          counter_type: mapPointTypeToDbCounterType(p.pointType) as any,
-          status: (p.status === 'active' ? 'Active' : 'Unverified') as any,
-          sort_order: idx + 1,
-          terminal_id: p.counterId || null,
-          halt_minutes: p.haltMinutes,
-          break_minutes: p.breakMinutes,
-          is_boarding_allowed: p.isBoardingAllowed,
-          is_dropping_allowed: p.isDroppingAllowed,
-          is_visible_to_customer: p.isVisibleToCustomer,
-          notes: p.notes || null,
-        }));
+        const rows = data.points.map((p, idx) => {
+          const counter = p.counterId ? get().getCounterById(p.counterId) : null;
+          return {
+            route_id: newRoute.id,
+            name: counter?.name || p.customPointName || 'Unnamed',
+            location: counter?.address || '',
+            district: counter?.district || '',
+            phone: counter?.phone || '',
+            counter_type: mapPointTypeToDb(p.pointType),
+            status: 'Active' as const,
+            sort_order: idx + 1,
+          };
+        });
 
-        const { error: cError } = await supabase.from('route_counters').insert(counterRows);
-        if (cError) console.warn('Failed to insert route counters:', cError);
+        const { error: cErr } = await supabase.from('route_counters').insert(rows);
+        if (cErr) console.warn('Failed to insert route counters:', cErr);
       }
 
       await get().loadRoutes();
@@ -334,9 +301,9 @@ export const useStore = create<CounterStoreState>((set, get) => ({
       if (data.baseFare !== undefined) updates.base_fare = data.baseFare;
       if (data.status !== undefined) updates.status = data.status === 'active' ? 'active' : 'inactive';
       if (data.estimatedDuration !== undefined) {
-        const hMatch = data.estimatedDuration.match(/(\d+)\s*h/);
-        const mMatch = data.estimatedDuration.match(/(\d+)\s*m/);
-        updates.duration_minutes = (hMatch ? parseInt(hMatch[1]) * 60 : 0) + (mMatch ? parseInt(mMatch[1]) : 0);
+        const h = data.estimatedDuration.match(/(\d+)\s*h/);
+        const m = data.estimatedDuration.match(/(\d+)\s*m/);
+        updates.duration_minutes = (h ? parseInt(h[1]) * 60 : 0) + (m ? parseInt(m[1]) : 0);
       }
 
       if (Object.keys(updates).length > 0) {
@@ -344,31 +311,27 @@ export const useStore = create<CounterStoreState>((set, get) => ({
         if (error) throw error;
       }
 
-      // If points changed, replace route_counters
+      // Replace route_counters if points changed
       if (data.points !== undefined) {
         await supabase.from('route_counters').delete().eq('route_id', id);
 
         if (data.points.length > 0) {
-          const counterRows = data.points.map((p, idx) => ({
-            route_id: id,
-            name: p.customPointName || get().getCounterById(p.counterId || '')?.name || 'Unnamed',
-            location: get().getCounterById(p.counterId || '')?.address || '',
-            district: get().getCounterById(p.counterId || '')?.district || '',
-            phone: get().getCounterById(p.counterId || '')?.phone || '',
-            counter_type: mapPointTypeToDbCounterType(p.pointType) as any,
-            status: (p.status === 'active' ? 'Active' : 'Unverified') as any,
-            sort_order: idx + 1,
-            terminal_id: p.counterId || null,
-            halt_minutes: p.haltMinutes,
-            break_minutes: p.breakMinutes,
-            is_boarding_allowed: p.isBoardingAllowed,
-            is_dropping_allowed: p.isDroppingAllowed,
-            is_visible_to_customer: p.isVisibleToCustomer,
-            notes: p.notes || null,
-          }));
+          const rows = data.points.map((p, idx) => {
+            const counter = p.counterId ? get().getCounterById(p.counterId) : null;
+            return {
+              route_id: id,
+              name: counter?.name || p.customPointName || 'Unnamed',
+              location: counter?.address || '',
+              district: counter?.district || '',
+              phone: counter?.phone || '',
+              counter_type: mapPointTypeToDb(p.pointType),
+              status: 'Active' as const,
+              sort_order: idx + 1,
+            };
+          });
 
-          const { error: cError } = await supabase.from('route_counters').insert(counterRows);
-          if (cError) console.warn('Failed to update route counters:', cError);
+          const { error: cErr } = await supabase.from('route_counters').insert(rows);
+          if (cErr) console.warn('Failed to update route counters:', cErr);
         }
       }
 
