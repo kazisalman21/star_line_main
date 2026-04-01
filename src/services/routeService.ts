@@ -153,6 +153,26 @@ export async function searchTrips(
       bookedCounts[b.schedule_id] = (bookedCounts[b.schedule_id] || 0) + count;
     });
 
+    // Fetch boarding/dropping points from route_counters
+    const { data: counters } = await supabase
+      .from('route_counters')
+      .select('name, custom_point_name, is_boarding_allowed, is_dropping_allowed, sort_order')
+      .eq('route_id', route.id)
+      .eq('status', 'active')
+      .eq('is_visible_to_customer', true)
+      .order('sort_order', { ascending: true });
+
+    const boardingPts = (counters || [])
+      .filter((c: any) => c.is_boarding_allowed)
+      .map((c: any) => c.custom_point_name || c.name);
+    const droppingPts = (counters || [])
+      .filter((c: any) => c.is_dropping_allowed)
+      .map((c: any) => c.custom_point_name || c.name);
+
+    // Fallback if no counters configured yet
+    const fallbackBoarding = [`${route.origin} Terminal`, `${route.origin} Bypass`, `${route.origin} Central`];
+    const fallbackDropping = [`${route.destination} Terminal`, `${route.destination} Main Stand`, `${route.destination} City Center`];
+
     // Transform to BusResult format
     return schedules.map((schedule: any) => {
       const bus = schedule.buses as Bus;
@@ -185,8 +205,8 @@ export async function searchTrips(
         availableSeats: available,
         totalSeats: bus.total_seats,
         fare: Math.round(fare * fareMultiplier),
-        boardingPoints: [`${route.origin} Terminal`, `${route.origin} Bypass`, `${route.origin} Central`],
-        droppingPoints: [`${route.destination} Terminal`, `${route.destination} Main Stand`, `${route.destination} City Center`],
+        boardingPoints: boardingPts.length > 0 ? boardingPts : fallbackBoarding,
+        droppingPoints: droppingPts.length > 0 ? droppingPts : fallbackDropping,
         date,
       };
     }).sort((a: BusResult, b: BusResult) => a.departureTime.localeCompare(b.departureTime));
