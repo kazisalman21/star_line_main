@@ -11,7 +11,7 @@ import PageHead from '@/components/PageHead';
 
 const features = [
   { icon: Navigation, title: 'Live Tracking', desc: 'Track your coach in real-time from departure to destination' },
-  { icon: Bus, title: 'Premium Fleet', desc: 'AC Sleeper, Business & Economy with modern amenities' },
+  { icon: Bus, title: 'Premium Fleet', desc: 'AC & Non-AC coaches with modern amenities' },
   { icon: MapPin, title: 'Seat Selection', desc: 'Choose your preferred seat with interactive coach maps' },
   { icon: CreditCard, title: 'Easy Payments', desc: 'Pay with bKash, Nagad, card, or at counter' },
   { icon: Clock, title: 'On-Time Promise', desc: '94% on-time performance across all routes' },
@@ -36,7 +36,7 @@ export default function LandingPage() {
   }, []);
   return (
     <div className="min-h-screen bg-background">
-      <PageHead title="Book Intercity Bus Tickets" description="Book premium intercity bus tickets with Star Line Group — Bangladesh's trusted bus service. AC Sleeper, Business & Economy coaches." />
+      <PageHead title="Book Intercity Bus Tickets" description="Book premium intercity bus tickets with Star Line Group — Bangladesh's trusted bus service. AC & Non-AC coaches." />
       <Navbar />
       <AnimatedHero />
 

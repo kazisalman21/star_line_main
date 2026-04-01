@@ -79,31 +79,43 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          type: 'AC' | 'Non-AC' | 'Sleeper';
+          type: 'AC' | 'Non-AC';
           total_seats: number;
           amenities: Json;
           registration_number: string;
           status: 'active' | 'maintenance' | 'retired';
+          fuel_type: string | null;
+          assigned_driver_id: string | null;
+          assigned_staff_id: string | null;
+          assigned_supervisor_id: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           name: string;
-          type: 'AC' | 'Non-AC' | 'Sleeper';
+          type: 'AC' | 'Non-AC';
           total_seats: number;
           amenities?: Json;
           registration_number: string;
           status?: 'active' | 'maintenance' | 'retired';
+          fuel_type?: string;
+          assigned_driver_id?: string | null;
+          assigned_staff_id?: string | null;
+          assigned_supervisor_id?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           name?: string;
-          type?: 'AC' | 'Non-AC' | 'Sleeper';
+          type?: 'AC' | 'Non-AC';
           total_seats?: number;
           amenities?: Json;
           registration_number?: string;
           status?: 'active' | 'maintenance' | 'retired';
+          fuel_type?: string;
+          assigned_driver_id?: string | null;
+          assigned_staff_id?: string | null;
+          assigned_supervisor_id?: string | null;
           created_at?: string;
         };
         Relationships: [];

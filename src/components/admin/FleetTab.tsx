@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getAllBuses, getFleetStatus, createBus, deleteBus, updateBus, FleetStatus } from '@/services/adminService';
 import { useConfirmDialog } from '@/components/admin/ConfirmDialog';
+import { usePersonnelStore } from '@/data/personnelStore';
 
 const busTypeOptions = ['AC', 'Non-AC'];
 const seatCapacityOptions = [36, 40, 41];
@@ -31,14 +32,17 @@ export function FleetTab() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const { confirm, DialogComponent } = useConfirmDialog();
 
+  // Personnel store — dynamic dropdowns
+  const { drivers, staff, supervisors, loadAll: loadPersonnel } = usePersonnelStore();
+
   const [busForm, setBusForm] = useState({
     name: '', regNo: '', type: 'AC', seats: '36',
-    fuelType: 'Diesel', driver: '', staff: '', supervisor: '',
+    fuelType: 'Diesel', driverId: '', staffId: '', supervisorId: '',
   });
 
   const resetForm = () => setBusForm({
     name: '', regNo: '', type: 'AC', seats: '36',
-    fuelType: 'Diesel', driver: '', staff: '', supervisor: '',
+    fuelType: 'Diesel', driverId: '', staffId: '', supervisorId: '',
   });
 
   const load = async () => {
@@ -47,7 +51,14 @@ export function FleetTab() {
     setFleetStats(f);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadPersonnel(); }, []);
+
+  // Helper to get person name by id from a list
+  const getPersonName = (list: { id: string; name: string }[], id: string | undefined) => {
+    if (!id) return '—';
+    const p = list.find(x => x.id === id);
+    return p ? p.name : '—';
+  };
 
   const handleCreate = async () => {
     if (!busForm.name || !busForm.regNo) return;
@@ -55,9 +66,13 @@ export function FleetTab() {
     await createBus({
       name: busForm.name,
       registration_number: busForm.regNo,
-      type: busForm.type as any,
+      type: busForm.type as 'AC' | 'Non-AC',
       total_seats: parseInt(busForm.seats) || 36,
-    });
+      fuel_type: busForm.fuelType,
+      assigned_driver_id: busForm.driverId || null,
+      assigned_staff_id: busForm.staffId || null,
+      assigned_supervisor_id: busForm.supervisorId || null,
+    } as any);
     resetForm();
     setShowAddBus(false);
     setSaving(false);
@@ -124,9 +139,9 @@ export function FleetTab() {
                 </TableCell>
                 <TableCell className="hidden md:table-cell"><span className="text-xs bg-secondary/60 px-2 py-1 rounded-md">{bus.type}</span></TableCell>
                 <TableCell className="hidden lg:table-cell text-xs font-mono text-muted-foreground">{bus.registration_number}</TableCell>
-                <TableCell className="hidden md:table-cell text-sm">{(bus as any).driver || '—'}</TableCell>
-                <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{(bus as any).staff || '—'}</TableCell>
-                <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{(bus as any).supervisor || '—'}</TableCell>
+                <TableCell className="hidden md:table-cell text-sm">{getPersonName(drivers, bus.assigned_driver_id)}</TableCell>
+                <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{getPersonName(staff, bus.assigned_staff_id)}</TableCell>
+                <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{getPersonName(supervisors, bus.assigned_supervisor_id)}</TableCell>
                 <TableCell>
                   <button onClick={() => handleToggleStatus(bus.id, bus.status)} className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusBadge(bus.status)} hover:opacity-80`}>
                     {bus.status}
@@ -194,15 +209,24 @@ export function FleetTab() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><UserCog className="w-3 h-3" /> Assign Driver</label>
-                <Input placeholder="Driver name" className="bg-secondary/50" value={busForm.driver} onChange={e => setBusForm(p => ({ ...p, driver: e.target.value }))} />
+                <select title="Select driver" className="w-full h-10 rounded-md border border-input bg-secondary/50 px-3 text-sm" value={busForm.driverId} onChange={e => setBusForm(p => ({ ...p, driverId: e.target.value }))}>
+                  <option value="">— None —</option>
+                  {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><UserCheck className="w-3 h-3" /> Assign Staff</label>
-                <Input placeholder="Staff name" className="bg-secondary/50" value={busForm.staff} onChange={e => setBusForm(p => ({ ...p, staff: e.target.value }))} />
+                <select title="Select staff" className="w-full h-10 rounded-md border border-input bg-secondary/50 px-3 text-sm" value={busForm.staffId} onChange={e => setBusForm(p => ({ ...p, staffId: e.target.value }))}>
+                  <option value="">— None —</option>
+                  {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><ClipboardList className="w-3 h-3" /> Assign Supervisor</label>
-                <Input placeholder="Supervisor name" className="bg-secondary/50" value={busForm.supervisor} onChange={e => setBusForm(p => ({ ...p, supervisor: e.target.value }))} />
+                <select title="Select supervisor" className="w-full h-10 rounded-md border border-input bg-secondary/50 px-3 text-sm" value={busForm.supervisorId} onChange={e => setBusForm(p => ({ ...p, supervisorId: e.target.value }))}>
+                  <option value="">— None —</option>
+                  {supervisors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                </select>
               </div>
             </div>
           </div>
@@ -224,12 +248,20 @@ export function FleetTab() {
           </DialogHeader>
           {selectedBus && (
             <div className="space-y-3 text-sm">
-              {Object.entries(selectedBus).filter(([k]) => k !== 'id' && k !== 'amenities').map(([key, value]) => (
-                <div key={key} className="flex justify-between items-center py-2 border-b border-border/20 last:border-0">
-                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1')}</span>
-                  <span className="font-medium text-right max-w-[60%] truncate">
-                    {Array.isArray(value) ? (value as string[]).join(', ') : String(value)}
-                  </span>
+              {[
+                ['Name', selectedBus.name],
+                ['Registration', selectedBus.registration_number],
+                ['Type', selectedBus.type],
+                ['Total Seats', selectedBus.total_seats],
+                ['Status', selectedBus.status],
+                ['Fuel Type', selectedBus.fuel_type || 'Diesel'],
+                ['Driver', getPersonName(drivers, selectedBus.assigned_driver_id)],
+                ['Staff', getPersonName(staff, selectedBus.assigned_staff_id)],
+                ['Supervisor', getPersonName(supervisors, selectedBus.assigned_supervisor_id)],
+              ].map(([key, value]) => (
+                <div key={key as string} className="flex justify-between items-center py-2 border-b border-border/20 last:border-0">
+                  <span className="text-muted-foreground">{key}</span>
+                  <span className="font-medium capitalize">{String(value)}</span>
                 </div>
               ))}
             </div>

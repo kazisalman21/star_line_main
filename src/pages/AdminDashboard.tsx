@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Bus, Building2, Route, Ticket, UserCog, Settings, Calendar } from 'lucide-react';
+import { LayoutDashboard, Bus, Building2, Route, Ticket, UserCog, Settings, Calendar, Users, ShieldCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
 
-// Import newly separated tab components
+// Import tab components
 import { OverviewTab } from '@/components/admin/OverviewTab';
 import { FleetTab } from '@/components/admin/FleetTab';
 import CounterManagementSection from '@/components/admin/CounterManagementSection';
@@ -13,9 +13,11 @@ import RouteManagementSection from '@/components/admin/RouteManagementSection';
 import { BookingsTab } from '@/components/admin/BookingsTab';
 import { SchedulesTab } from '@/components/admin/SchedulesTab';
 import { DriversTab } from '@/components/admin/DriversTab';
+import { StaffTab } from '@/components/admin/StaffTab';
+import { SupervisorTab } from '@/components/admin/SupervisorTab';
 import { SettingsTab } from '@/components/admin/SettingsTab';
 
-type AdminTab = 'overview' | 'fleet' | 'counters' | 'routes' | 'schedules' | 'bookings' | 'drivers' | 'settings';
+type AdminTab = 'overview' | 'fleet' | 'counters' | 'routes' | 'schedules' | 'bookings' | 'drivers' | 'staff' | 'supervisors' | 'settings';
 
 const adminTabs: { id: AdminTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -25,6 +27,8 @@ const adminTabs: { id: AdminTab; label: string; icon: typeof LayoutDashboard }[]
   { id: 'schedules', label: 'Schedules', icon: Calendar },
   { id: 'bookings', label: 'Bookings', icon: Ticket },
   { id: 'drivers', label: 'Drivers', icon: UserCog },
+  { id: 'staff', label: 'Staff', icon: Users },
+  { id: 'supervisors', label: 'Supervisors', icon: ShieldCheck },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -40,6 +44,8 @@ export default function AdminDashboard() {
       case 'schedules': return <SchedulesTab />;
       case 'bookings': return <BookingsTab />;
       case 'drivers': return <DriversTab />;
+      case 'staff': return <StaffTab />;
+      case 'supervisors': return <SupervisorTab />;
       case 'settings': return <SettingsTab />;
       default: return null;
     }

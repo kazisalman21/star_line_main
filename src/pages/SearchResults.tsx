@@ -61,17 +61,15 @@ export default function SearchResults() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
-                <select value={filterType} onChange={e => setFilterType(e.target.value)} className="bg-secondary text-foreground text-sm rounded-lg px-3 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <select title="Filter by class" value={filterType} onChange={e => setFilterType(e.target.value)} className="bg-secondary text-foreground text-sm rounded-lg px-3 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
                   <option value="all">All Classes</option>
-                  <option value="AC Sleeper">AC Sleeper</option>
-                  <option value="AC Business">AC Business</option>
-                  <option value="AC Economy">AC Economy</option>
+                  <option value="AC">AC</option>
                   <option value="Non-AC">Non-AC</option>
                 </select>
               </div>
               <div className="flex items-center gap-2">
                 <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-                <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} className="bg-secondary text-foreground text-sm rounded-lg px-3 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <select title="Sort results" value={sortBy} onChange={e => setSortBy(e.target.value as any)} className="bg-secondary text-foreground text-sm rounded-lg px-3 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
                   <option value="departure">Departure</option>
                   <option value="price">Price</option>
                 </select>

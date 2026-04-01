@@ -456,7 +456,17 @@ export async function getAllBuses() {
   return data || [];
 }
 
-export async function createBus(bus: { name: string; type: 'AC' | 'Non-AC' | 'Sleeper'; total_seats: number; registration_number: string; amenities?: any }) {
+export async function createBus(bus: {
+  name: string;
+  type: 'AC' | 'Non-AC';
+  total_seats: number;
+  registration_number: string;
+  amenities?: any;
+  fuel_type?: string;
+  assigned_driver_id?: string | null;
+  assigned_staff_id?: string | null;
+  assigned_supervisor_id?: string | null;
+}) {
   return supabase.from('buses').insert(bus).select().single();
 }
 

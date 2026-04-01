@@ -15,9 +15,7 @@ const statusBadge = (status: string) => {
 };
 
 const fleetTypePie = [
-  { name: 'AC Sleeper', value: 2, color: 'hsl(355, 70%, 42%)' },
-  { name: 'AC Business', value: 3, color: 'hsl(42, 85%, 52%)' },
-  { name: 'AC Economy', value: 2, color: 'hsl(210, 75%, 52%)' },
+  { name: 'AC', value: 7, color: 'hsl(355, 70%, 42%)' },
   { name: 'Non-AC', value: 1, color: 'hsl(220, 10%, 50%)' },
 ];
 

@@ -24,7 +24,7 @@ export default function SeatSelection() {
   const date = params.get('date') || getToday();
   const fare = Number(params.get('fare') || 850);
   const coachName = params.get('coachName') || 'Starline Platinum';
-  const coachType = params.get('coachType') || 'AC Sleeper';
+  const coachType = params.get('coachType') || 'AC';
   const dep = params.get('dep') || '22:00';
   const arr = params.get('arr') || '03:30';
   const duration = params.get('duration') || '5h 30m';

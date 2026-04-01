@@ -48,10 +48,8 @@ function formatDuration(minutes: number): string {
 // Helper — map bus.type to coach type label
 // ============================================================
 function mapBusType(bus: Bus): string {
-  if (bus.name.includes('Platinum')) return 'AC Sleeper';
-  if (bus.name.includes('Gold')) return 'AC Business';
-  if (bus.name.includes('Silver')) return 'AC Economy';
-  return 'Non-AC';
+  if (bus.type === 'Non-AC') return 'Non-AC';
+  return 'AC';
 }
 
 // ============================================================

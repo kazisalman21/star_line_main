@@ -65,10 +65,8 @@ export interface CreateBookingParams {
 // Helper — map bus name to coach type label
 // ============================================================
 function mapBusType(busName: string): string {
-  if (busName.includes('Platinum')) return 'AC Sleeper';
-  if (busName.includes('Gold')) return 'AC Business';
-  if (busName.includes('Silver')) return 'AC Economy';
-  return 'Non-AC';
+  if (busName.toLowerCase().includes('non-ac')) return 'Non-AC';
+  return 'AC';
 }
 
 // ============================================================
