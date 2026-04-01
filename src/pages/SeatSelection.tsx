@@ -28,7 +28,7 @@ export default function SeatSelection() {
   const dep = params.get('dep') || '22:00';
   const arr = params.get('arr') || '03:30';
   const duration = params.get('duration') || '5h 30m';
-  const passengers = Number(params.get('passengers') || 1);
+  const passengers = Math.min(Number(params.get('passengers') || 1), 5);
 
   // State
   const [seatData, setSeatData] = useState<SeatInfo[]>([]);

@@ -42,6 +42,7 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
             <select
+              title="Select departure city"
               value={from}
               onChange={e => setFrom(e.target.value)}
               className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -52,7 +53,7 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
         </div>
 
         {/* Swap */}
-        <button onClick={swap} className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary hover:bg-primary/20 transition-colors self-end mb-0.5">
+        <button onClick={swap} title="Swap origin and destination" className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary hover:bg-primary/20 transition-colors self-end mb-0.5">
           <ArrowRightLeft className="w-4 h-4 text-primary" />
         </button>
 
@@ -62,6 +63,7 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-accent" />
             <select
+              title="Select destination city"
               value={to}
               onChange={e => setTo(e.target.value)}
               className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -78,6 +80,7 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="date"
+              title="Select travel date"
               value={date}
               onChange={e => setDate(e.target.value)}
               className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 [color-scheme:dark]"
@@ -91,11 +94,12 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
           <div className="relative">
             <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <select
+              title="Select number of passengers"
               value={passengers}
               onChange={e => setPassengers(Number(e.target.value))}
               className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+              {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
         </div>
