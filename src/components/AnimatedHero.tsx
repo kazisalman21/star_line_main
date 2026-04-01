@@ -120,13 +120,13 @@ export default function AnimatedHero() {
   const textColor = isDark ? 'text-[hsl(40,10%,92%)]' : 'text-[hsl(220,28%,12%)]';
 
   return (
-    <section ref={sectionRef} className="relative min-h-[100vh] flex items-center overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-[100svh] flex items-center overflow-hidden">
       {/* Background — swaps with theme */}
       <img
         ref={bgRef}
         src={heroBg}
         alt={isDark ? 'Star Line terminal at night' : 'Star Line terminal in daylight'}
-        className="absolute inset-0 w-full h-full object-cover will-change-transform transition-none"
+        className="absolute inset-0 w-full h-full object-cover object-center md:object-[center_30%] will-change-transform transition-none"
         style={{ opacity: 0 }}
         draggable={false}
       />
@@ -162,20 +162,23 @@ export default function AnimatedHero() {
       <div ref={overlayRef} className="absolute inset-0" style={{ zIndex: 7, opacity: 0 }}>
         {isDark ? (
           <>
-            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,28%,6%)] via-[hsl(220,28%,6%,0.88)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,28%,6%)] via-[hsl(220,28%,6%,0.88)] to-transparent md:via-[hsl(220,28%,6%,0.88)] md:to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,28%,6%)] via-transparent to-[hsl(220,28%,6%,0.35)]" />
+            {/* Mobile: softer overlay so bg is more visible */}
+            <div className="absolute inset-0 md:hidden bg-[hsl(220,28%,6%,0.45)]" />
           </>
         ) : (
           <>
             <div className="absolute inset-0 bg-gradient-to-r from-[hsl(0,0%,100%,0.85)] via-[hsl(0,0%,100%,0.4)] to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(0,0%,100%,0.5)] via-transparent to-transparent" />
+            <div className="absolute inset-0 md:hidden bg-[hsl(0,0%,100%,0.3)]" />
           </>
         )}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 sm:h-48 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       {/* Content */}
-      <div ref={contentRef} className={`container relative pt-28 pb-16 md:pt-32 md:pb-24 ${textColor}`} style={{ zIndex: 8 }}>
+      <div ref={contentRef} className={`container relative pt-24 pb-12 sm:pt-28 sm:pb-16 md:pt-32 md:pb-24 ${textColor}`} style={{ zIndex: 8 }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <div ref={badgeRef} className="inline-flex items-center gap-2 bg-primary/8 border border-primary/15 rounded-full px-4 py-1.5 mb-8" style={{ opacity: 0 }}>
@@ -183,7 +186,7 @@ export default function AnimatedHero() {
               <span className="text-xs font-semibold tracking-wide text-accent uppercase">Star Line Group</span>
             </div>
 
-            <h1 ref={headingRef} className="font-display text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ opacity: 0 }}>
+            <h1 ref={headingRef} className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] mb-5 sm:mb-6 tracking-tight" style={{ opacity: 0 }}>
               Your Journey,{' '}
               <span className="text-gradient-primary">Our Pride.</span>
             </h1>
