@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { UserCog, Plus, Search, Phone, Pencil, Trash2, Star, Check, Loader2 } from 'lucide-react';
+import { UserCog, Plus, Search, Phone, Pencil, Trash2, Star, Check, Loader2, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -17,12 +17,12 @@ const statusBadge = (status: string) => {
 
 // Mock data — replace with Supabase when drivers table is created
 const initialDrivers = [
-  { id: 'D001', name: 'Karim Uddin', phone: '01712000001', license: 'DM-2024-001234', experience: '12 years', rating: 4.8, trips: 2340, status: 'on-duty', assignedBus: 'Platinum-01' },
-  { id: 'D002', name: 'Rafiq Hossain', phone: '01712000002', license: 'DM-2023-005678', experience: '8 years', rating: 4.6, trips: 1560, status: 'on-duty', assignedBus: 'Gold-03' },
-  { id: 'D003', name: 'Alam Sheikh', phone: '01712000003', license: 'DM-2022-009012', experience: '15 years', rating: 4.9, trips: 3100, status: 'off-duty', assignedBus: 'Silver-05' },
-  { id: 'D004', name: 'Hasan Ali', phone: '01712000004', license: 'DM-2025-003456', experience: '5 years', rating: 4.5, trips: 890, status: 'on-duty', assignedBus: 'Gold-02' },
-  { id: 'D005', name: 'Jamal Mia', phone: '01712000005', license: 'DM-2021-007890', experience: '18 years', rating: 4.7, trips: 4200, status: 'on-leave', assignedBus: 'Platinum-04' },
-  { id: 'D006', name: 'Belal Hossain', phone: '01712000006', license: 'DM-2024-002345', experience: '6 years', rating: 4.4, trips: 720, status: 'on-duty', assignedBus: 'Silver-11' },
+  { id: 'D001', name: 'Karim Uddin', phone: '01712000001', license: 'DM-2024-001234', experience: '12 years', rating: 4.8, trips: 2340, status: 'on-duty', assignedBus: 'Platinum-01', photo: '' },
+  { id: 'D002', name: 'Rafiq Hossain', phone: '01712000002', license: 'DM-2023-005678', experience: '8 years', rating: 4.6, trips: 1560, status: 'on-duty', assignedBus: 'Gold-03', photo: '' },
+  { id: 'D003', name: 'Alam Sheikh', phone: '01712000003', license: 'DM-2022-009012', experience: '15 years', rating: 4.9, trips: 3100, status: 'off-duty', assignedBus: 'Silver-05', photo: '' },
+  { id: 'D004', name: 'Hasan Ali', phone: '01712000004', license: 'DM-2025-003456', experience: '5 years', rating: 4.5, trips: 890, status: 'on-duty', assignedBus: 'Gold-02', photo: '' },
+  { id: 'D005', name: 'Jamal Mia', phone: '01712000005', license: 'DM-2021-007890', experience: '18 years', rating: 4.7, trips: 4200, status: 'on-leave', assignedBus: 'Platinum-04', photo: '' },
+  { id: 'D006', name: 'Belal Hossain', phone: '01712000006', license: 'DM-2024-002345', experience: '6 years', rating: 4.4, trips: 720, status: 'on-duty', assignedBus: 'Silver-11', photo: '' },
 ];
 
 export function DriversTab() {
@@ -32,7 +32,25 @@ export function DriversTab() {
   const [saving, setSaving] = useState(false);
   const { confirm, DialogComponent } = useConfirmDialog();
 
-  const [form, setForm] = useState({ name: '', phone: '', license: '', experience: '' });
+  const [form, setForm] = useState({ name: '', photo: '', phone: '', license: '', experience: '' });
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setForm({ name: '', photo: '', phone: '', license: '', experience: '' });
+    setPhotoPreview(null);
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+        setForm(p => ({ ...p, photo: file.name }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCreate = () => {
     if (!form.name || !form.phone) return;
@@ -47,9 +65,10 @@ export function DriversTab() {
       trips: 0,
       status: 'off-duty',
       assignedBus: 'Unassigned',
+      photo: photoPreview || '',
     };
     setDrivers(prev => [...prev, newDriver]);
-    setForm({ name: '', phone: '', license: '', experience: '' });
+    resetForm();
     setShowAdd(false);
     setSaving(false);
   };
@@ -79,7 +98,7 @@ export function DriversTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search drivers..." className="pl-9 bg-secondary/50 border-border/40 sm:w-64" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <Button onClick={() => setShowAdd(true)} className="btn-primary-glow shrink-0">
+          <Button onClick={() => { resetForm(); setShowAdd(true); }} className="btn-primary-glow shrink-0">
             <Plus className="w-4 h-4 mr-1" /> Add Driver
           </Button>
         </div>
@@ -90,8 +109,12 @@ export function DriversTab() {
           <motion.div key={driver.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-card p-5 card-hover">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-secondary/60 flex items-center justify-center">
-                  <UserCog className="w-5 h-5 text-muted-foreground" />
+                <div className="w-11 h-11 rounded-full bg-secondary/60 flex items-center justify-center overflow-hidden">
+                  {driver.photo ? (
+                    <img src={driver.photo} alt={driver.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <UserCog className="w-5 h-5 text-muted-foreground" />
+                  )}
                 </div>
                 <div>
                   <div className="font-medium">{driver.name}</div>
@@ -117,6 +140,7 @@ export function DriversTab() {
         ))}
       </div>
 
+      {/* Add Driver Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="glass-card border-border/40">
           <DialogHeader>
@@ -124,12 +148,28 @@ export function DriversTab() {
             <DialogDescription>Register a driver to the Starline team.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-xs text-muted-foreground mb-1 block">Full Name</label><Input placeholder="e.g. Morshed Ali" className="bg-secondary/50" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
-              <div><label className="text-xs text-muted-foreground mb-1 block">Phone</label><Input placeholder="e.g. 01712000010" className="bg-secondary/50" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+            {/* Driver Photo Upload */}
+            <div className="flex justify-center">
+              <label className="cursor-pointer group">
+                <div className="w-20 h-20 rounded-full bg-secondary/60 border-2 border-dashed border-border/60 flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-colors">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Driver preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1">
+                      <Camera className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="text-[10px] text-muted-foreground">Photo</span>
+                    </div>
+                  )}
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </label>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-xs text-muted-foreground mb-1 block">License No</label><Input placeholder="e.g. DM-2026-001234" className="bg-secondary/50" value={form.license} onChange={e => setForm(p => ({ ...p, license: e.target.value }))} /></div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Full Name</label><Input placeholder="e.g. Morshed Ali" className="bg-secondary/50" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Phone Number</label><Input placeholder="e.g. 01712000010" className="bg-secondary/50" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-xs text-muted-foreground mb-1 block">License Number</label><Input placeholder="e.g. DM-2026-001234" className="bg-secondary/50" value={form.license} onChange={e => setForm(p => ({ ...p, license: e.target.value }))} /></div>
               <div><label className="text-xs text-muted-foreground mb-1 block">Experience</label><Input placeholder="e.g. 10 years" className="bg-secondary/50" value={form.experience} onChange={e => setForm(p => ({ ...p, experience: e.target.value }))} /></div>
             </div>
           </div>
