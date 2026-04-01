@@ -207,7 +207,23 @@
   }
 
   .section-spacing {
-    @apply py-20 md:py-28;
+    @apply py-16 sm:py-20 md:py-28;
+  }
+
+  /* Responsive table wrapper — horizontal scroll on mobile */
+  .table-responsive {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile-safe dialog/modal — prevent viewport overflow */
+  .dialog-mobile-safe {
+    @apply max-h-[85vh] overflow-y-auto;
+  }
+
+  /* Touch-friendly tap target minimum */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
   }
 
   /* Traveler idle breathing animation */

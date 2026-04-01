@@ -53,7 +53,7 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.1 }}
                 className="text-center"
               >
-                <div className="font-display text-3xl md:text-4xl font-bold text-gradient-primary mb-1">{item.value}</div>
+                <div className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-gradient-primary mb-1">{item.value}</div>
                 <div className="text-sm text-muted-foreground">{item.label}</div>
               </motion.div>
             ))}
@@ -102,7 +102,7 @@ export default function LandingPage() {
           <div className="flex items-end justify-between mb-10">
             <div>
               <span className="text-xs font-semibold tracking-widest text-accent uppercase mb-3 block">Popular</span>
-              <h2 className="font-display text-3xl font-bold">Top Routes</h2>
+              <h2 className="font-display text-2xl sm:text-3xl font-bold">Top Routes</h2>
             </div>
             <Link to="/routes" className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
               All routes <ChevronRight className="w-4 h-4" />
@@ -151,7 +151,7 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="section-spacing">
         <div className="container">
-          <div className="glass-card-elevated p-12 md:p-20 text-center relative overflow-hidden">
+          <div className="glass-card-elevated p-8 sm:p-12 md:p-20 text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
             <div className="relative z-10">
               <span className="text-xs font-semibold tracking-widest text-accent uppercase mb-4 block">Ready?</span>

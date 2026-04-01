@@ -114,7 +114,8 @@ export function FleetTab() {
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
+      <div className="table-responsive">
+        <div className="glass-card overflow-hidden min-w-[640px] sm:min-w-0">
         <Table>
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
@@ -158,6 +159,7 @@ export function FleetTab() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {fleetStats && (

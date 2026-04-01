@@ -61,7 +61,7 @@ export default function AdminDashboard() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-display text-3xl font-bold">Admin Panel</h1>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold">Admin Panel</h1>
               <p className="text-muted-foreground text-sm mt-1">Starline command center — manage everything</p>
             </div>
             <div className="hidden md:block text-right">
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                   activeTab === tab.id ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                 }`}
               >

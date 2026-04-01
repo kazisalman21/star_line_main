@@ -100,7 +100,7 @@ export default function AdminProfile() {
       <div className="pt-24 pb-16">
         <div className="container max-w-5xl">
           <motion.div {...fadeUp}>
-            <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-display tracking-tight mb-6 sm:mb-8">
               Admin <span className="text-primary">Profile</span>
             </h1>
           </motion.div>
@@ -121,10 +121,8 @@ export default function AdminProfile() {
             <div className="lg:col-span-2 space-y-6">
 
               {/* Profile Hero */}
-              <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.05 }}
-                className="glass-card p-6"
-              >
-                <div className="flex flex-col sm:flex-row items-start gap-5">
+              <div className="glass-card p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
                   {/* Avatar */}
                   <div className="relative">
                     <div className="w-20 h-20 rounded-2xl bg-primary/15 flex items-center justify-center overflow-hidden border-2 border-primary/30">
@@ -172,7 +170,7 @@ export default function AdminProfile() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Personal Information */}
               <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }}

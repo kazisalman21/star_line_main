@@ -176,8 +176,8 @@ export default function SeatSelection() {
                 </div>
 
                 {/* Bus Shape Container */}
-                <div className="flex justify-center">
-                  <div className="relative w-[280px]">
+                <div className="flex justify-center overflow-x-auto">
+                  <div className="relative w-[260px] sm:w-[280px]">
                     <div className="bg-secondary/30 border-2 border-border/60 rounded-t-[60px] rounded-b-2xl overflow-hidden">
                       {/* Driver area */}
                       <div className="bg-secondary/50 border-b border-border/40 px-6 pt-8 pb-4 rounded-t-[58px]">
@@ -317,7 +317,7 @@ export default function SeatSelection() {
 
             {/* Fare Summary */}
             <div>
-              <div className="glass-card-accent p-6 sticky top-24">
+              <div className="glass-card-accent p-4 sm:p-6 sticky top-24">
                 <h3 className="font-display font-semibold mb-4">Fare Summary</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between"><span className="text-muted-foreground">Coach</span><span>{coachName}</span></div>
