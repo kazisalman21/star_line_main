@@ -155,11 +155,17 @@ export function FleetTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="text-xs text-muted-foreground mb-1 block">Coach Type</label>
-                <select className="w-full h-10 rounded-md border border-input bg-secondary/50 px-3 text-sm" value={busForm.type} onChange={e => setBusForm(p => ({ ...p, type: e.target.value }))}>
+                <select title="Select coach type" className="w-full h-10 rounded-md border border-input bg-secondary/50 px-3 text-sm" value={busForm.type} onChange={e => setBusForm(p => ({ ...p, type: e.target.value }))}>
                   <option>AC Sleeper</option><option>AC Business</option><option>AC Economy</option><option>Non-AC</option>
                 </select>
               </div>
-              <div><label className="text-xs text-muted-foreground mb-1 block">Seats</label><Input type="number" value={busForm.seats} onChange={e => setBusForm(p => ({ ...p, seats: e.target.value }))} className="bg-secondary/50" /></div>
+              <div><label className="text-xs text-muted-foreground mb-1 block">Seat Plan</label>
+                <select title="Select seat configuration" className="w-full h-10 rounded-md border border-input bg-secondary/50 px-3 text-sm" value={busForm.seats} onChange={e => setBusForm(p => ({ ...p, seats: e.target.value }))}>
+                  <option value="36">36 Seats (A1–I4)</option>
+                  <option value="40">40 Seats (A1–J4)</option>
+                  <option value="41">41 Seats (A1–J4 + J5)</option>
+                </select>
+              </div>
             </div>
           </div>
           <DialogFooter>

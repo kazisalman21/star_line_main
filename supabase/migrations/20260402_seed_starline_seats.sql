@@ -1,91 +1,74 @@
 -- ═══════════════════════════════════════════════════════════════
--- Seed: Starline Bus Seat Formation
--- Layout: 1 door-side seat + 9 rows of 2+2 + 1 back row of 5
--- Total: 1 + 36 + 5 = 42 seats per bus
+-- Seed: Starline Bus Seat Formations
+-- 
+-- Supports 3 configurations based on bus total_seats:
+--   36 seats → A1-A4 through I1-I4 (9 rows × 4)
+--   40 seats → A1-A4 through J1-J4 (10 rows × 4)
+--   41 seats → A1-A4 through J1-J4 + J5 (10 rows × 4 + 1 back)
 --
--- Row A (row 0): single door-side seat [A]
--- Rows A-I (rows 1-9): 2+2 layout [X1, X2, aisle, X3, X4]
--- Row J (row 10): back row 5 seats [J1, J2, J3, J4, J5]
+-- All rows: 2+2 layout [X1, X2, aisle, X3, X4]
+-- Back row (41 only): 5 seats [J1, J2, J3, J4, J5]
 --
--- USAGE: Replace 'YOUR_BUS_ID' with an actual bus UUID from your buses table.
--- Run once per bus that uses this seat formation.
+-- Run after buses table has data. Safe to re-run (skips buses
+-- that already have seats).
 -- ═══════════════════════════════════════════════════════════════
-
--- Helper: delete existing seats for the bus first (if re-seeding)
--- DELETE FROM seats WHERE bus_id = 'YOUR_BUS_ID';
 
 DO $$
 DECLARE
-  v_bus_id uuid;
   v_bus RECORD;
+  v_row_labels text[] := ARRAY['A','B','C','D','E','F','G','H','I','J'];
+  v_row_count int;
+  v_has_back_5 boolean;
+  i int;
+  v_label text;
+  v_row_prefix text;
 BEGIN
-  -- Seed seats for ALL active buses that don't have seats yet
   FOR v_bus IN
-    SELECT id FROM buses
+    SELECT id, total_seats FROM buses
     WHERE status = 'active'
     AND id NOT IN (SELECT DISTINCT bus_id FROM seats)
   LOOP
-    v_bus_id := v_bus.id;
 
-    -- Row 0: Single door-side seat "A"
-    INSERT INTO seats (bus_id, seat_number, row_label, seat_type, is_active)
-    VALUES (v_bus_id, 'A', '00-A', 'standard', true);
+    -- Determine config from total_seats
+    IF v_bus.total_seats = 36 THEN
+      v_row_count := 9;   -- A through I
+      v_has_back_5 := false;
+    ELSIF v_bus.total_seats = 40 THEN
+      v_row_count := 10;  -- A through J
+      v_has_back_5 := false;
+    ELSIF v_bus.total_seats = 41 THEN
+      v_row_count := 10;  -- A through J, with J5
+      v_has_back_5 := true;
+    ELSE
+      -- Default: treat as 40-seat
+      v_row_count := 10;
+      v_has_back_5 := false;
+    END IF;
 
-    -- Rows A through I: 2+2 layout (seats X1, X2, X3, X4)
-    INSERT INTO seats (bus_id, seat_number, row_label, seat_type, is_active) VALUES
-      (v_bus_id, 'A1', '01-A', 'standard', true),
-      (v_bus_id, 'A2', '01-A', 'standard', true),
-      (v_bus_id, 'A3', '01-A', 'ladies', true),
-      (v_bus_id, 'A4', '01-A', 'ladies', true),
+    -- Insert 2+2 rows
+    FOR i IN 1..v_row_count LOOP
+      v_label := v_row_labels[i];
+      -- Zero-padded prefix for proper sort order: 01-A, 02-B, etc.
+      v_row_prefix := lpad(i::text, 2, '0') || '-' || v_label;
 
-      (v_bus_id, 'B1', '02-B', 'standard', true),
-      (v_bus_id, 'B2', '02-B', 'standard', true),
-      (v_bus_id, 'B3', '02-B', 'standard', true),
-      (v_bus_id, 'B4', '02-B', 'standard', true),
+      -- For the last row of a 41-seat bus, insert 5 seats
+      IF i = v_row_count AND v_has_back_5 THEN
+        INSERT INTO seats (bus_id, seat_number, row_label, seat_type, is_active) VALUES
+          (v_bus.id, v_label || '1', v_row_prefix, 'standard', true),
+          (v_bus.id, v_label || '2', v_row_prefix, 'standard', true),
+          (v_bus.id, v_label || '3', v_row_prefix, 'standard', true),
+          (v_bus.id, v_label || '4', v_row_prefix, 'standard', true),
+          (v_bus.id, v_label || '5', v_row_prefix, 'standard', true);
+      ELSE
+        -- Standard 2+2 row (4 seats)
+        INSERT INTO seats (bus_id, seat_number, row_label, seat_type, is_active) VALUES
+          (v_bus.id, v_label || '1', v_row_prefix, 'standard', true),
+          (v_bus.id, v_label || '2', v_row_prefix, 'standard', true),
+          (v_bus.id, v_label || '3', v_row_prefix, 'standard', true),
+          (v_bus.id, v_label || '4', v_row_prefix, 'standard', true);
+      END IF;
+    END LOOP;
 
-      (v_bus_id, 'C1', '03-C', 'standard', true),
-      (v_bus_id, 'C2', '03-C', 'standard', true),
-      (v_bus_id, 'C3', '03-C', 'standard', true),
-      (v_bus_id, 'C4', '03-C', 'standard', true),
-
-      (v_bus_id, 'D1', '04-D', 'standard', true),
-      (v_bus_id, 'D2', '04-D', 'standard', true),
-      (v_bus_id, 'D3', '04-D', 'standard', true),
-      (v_bus_id, 'D4', '04-D', 'standard', true),
-
-      (v_bus_id, 'E1', '05-E', 'standard', true),
-      (v_bus_id, 'E2', '05-E', 'standard', true),
-      (v_bus_id, 'E3', '05-E', 'standard', true),
-      (v_bus_id, 'E4', '05-E', 'standard', true),
-
-      (v_bus_id, 'F1', '06-F', 'standard', true),
-      (v_bus_id, 'F2', '06-F', 'standard', true),
-      (v_bus_id, 'F3', '06-F', 'standard', true),
-      (v_bus_id, 'F4', '06-F', 'standard', true),
-
-      (v_bus_id, 'G1', '07-G', 'standard', true),
-      (v_bus_id, 'G2', '07-G', 'standard', true),
-      (v_bus_id, 'G3', '07-G', 'standard', true),
-      (v_bus_id, 'G4', '07-G', 'standard', true),
-
-      (v_bus_id, 'H1', '08-H', 'standard', true),
-      (v_bus_id, 'H2', '08-H', 'standard', true),
-      (v_bus_id, 'H3', '08-H', 'standard', true),
-      (v_bus_id, 'H4', '08-H', 'standard', true),
-
-      (v_bus_id, 'I1', '09-I', 'standard', true),
-      (v_bus_id, 'I2', '09-I', 'standard', true),
-      (v_bus_id, 'I3', '09-I', 'standard', true),
-      (v_bus_id, 'I4', '09-I', 'standard', true);
-
-    -- Row J: Back row — 5 seats (no aisle)
-    INSERT INTO seats (bus_id, seat_number, row_label, seat_type, is_active) VALUES
-      (v_bus_id, 'J1', '10-J', 'standard', true),
-      (v_bus_id, 'J2', '10-J', 'standard', true),
-      (v_bus_id, 'J3', '10-J', 'standard', true),
-      (v_bus_id, 'J4', '10-J', 'standard', true),
-      (v_bus_id, 'J5', '10-J', 'standard', true);
-
-    RAISE NOTICE 'Seeded 42 seats for bus %', v_bus_id;
+    RAISE NOTICE 'Seeded % seats for bus %', v_bus.total_seats, v_bus.id;
   END LOOP;
 END $$;

@@ -63,7 +63,7 @@ export default function SeatSelection() {
   }, [scheduleId, date]);
 
   // Build seat layout from live data
-  // Starline formation: single door-side seat → 2+2 rows → 5-seat back row
+  // Starline formation: 2+2 rows (A-I or A-J) + optional 5-seat back row
   const seatLayout = useMemo(() => {
     if (seatData.length === 0) return [];
     // Group by row label
@@ -78,10 +78,6 @@ export default function SeatSelection() {
     return sortedRowLabels.map(label => {
       const rowSeats = rows[label].sort((a, b) => a.seatNumber.localeCompare(b.seatNumber));
 
-      // Single door-side seat (row with 1 seat, e.g. "A")
-      if (rowSeats.length === 1) {
-        return [rowSeats[0], null, null, null, null];
-      }
       // Standard 2+2 layout with aisle in the middle
       if (rowSeats.length === 4) {
         return [rowSeats[0], rowSeats[1], null, rowSeats[2], rowSeats[3]];
@@ -90,14 +86,7 @@ export default function SeatSelection() {
       if (rowSeats.length === 5) {
         return [rowSeats[0], rowSeats[1], rowSeats[2], rowSeats[3], rowSeats[4]];
       }
-      // 2-seat row (e.g. only left or right side)
-      if (rowSeats.length === 2) {
-        return [rowSeats[0], rowSeats[1], null, null, null];
-      }
-      // 3-seat row (e.g. 2 left + 1 right)
-      if (rowSeats.length === 3) {
-        return [rowSeats[0], rowSeats[1], null, rowSeats[2], null];
-      }
+      // Fallback
       return rowSeats;
     });
   }, [seatData]);
