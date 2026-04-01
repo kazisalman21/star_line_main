@@ -24,6 +24,7 @@ const RoutesFleet = lazy(() => import("./pages/RoutesFleet.tsx"));
 const Counters = lazy(() => import("./pages/Counters.tsx"));
 const Support = lazy(() => import("./pages/Support.tsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
+const AdminProfile = lazy(() => import("./pages/AdminProfile.tsx"));
 const Profile = lazy(() => import("./pages/Profile.tsx"));
 const PassengerDashboard = lazy(() => import("./pages/PassengerDashboard.tsx"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess.tsx"));
@@ -82,6 +83,7 @@ const App = () => (
 
                 {/* Admin routes */}
                 <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/admin/profile" element={<ProtectedRoute requireAdmin><AdminProfile /></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

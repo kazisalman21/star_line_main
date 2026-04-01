@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, LayoutDashboard, Sun, Moon, User, LogOut, Ticket } from 'lucide-react';
+import { Menu, X, LayoutDashboard, Sun, Moon, User, LogOut, Ticket, Shield } from 'lucide-react';
 import starlineLogo from '@/assets/starline-logo.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
@@ -94,35 +94,49 @@ export default function Navbar() {
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                     <div className="p-1">
-                      <Link
-                        to="/profile"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
-                      >
-                        <User className="w-4 h-4 text-muted-foreground" /> Profile
-                      </Link>
-                      <Link
-                        to="/dashboard"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-muted-foreground" /> Dashboard
-                      </Link>
-                      <Link
-                        to="/manage-booking"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
-                      >
-                        <Ticket className="w-4 h-4 text-muted-foreground" /> My Bookings
-                      </Link>
-                      {profile?.role === 'admin' && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
-                        >
-                          <LayoutDashboard className="w-4 h-4 text-muted-foreground" /> Admin
-                        </Link>
+                      {profile?.role === 'admin' ? (
+                        /* Admin menu items */
+                        <>
+                          <Link
+                            to="/admin/profile"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
+                          >
+                            <User className="w-4 h-4 text-muted-foreground" /> Admin Profile
+                          </Link>
+                          <Link
+                            to="/admin"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
+                          >
+                            <Shield className="w-4 h-4 text-muted-foreground" /> Admin Dashboard
+                          </Link>
+                        </>
+                      ) : (
+                        /* User menu items */
+                        <>
+                          <Link
+                            to="/profile"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
+                          >
+                            <User className="w-4 h-4 text-muted-foreground" /> Profile
+                          </Link>
+                          <Link
+                            to="/dashboard"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
+                          >
+                            <LayoutDashboard className="w-4 h-4 text-muted-foreground" /> Dashboard
+                          </Link>
+                          <Link
+                            to="/manage-booking"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
+                          >
+                            <Ticket className="w-4 h-4 text-muted-foreground" /> My Bookings
+                          </Link>
+                        </>
                       )}
                     </div>
                     <div className="p-1 border-t border-border">
@@ -187,9 +201,25 @@ export default function Navbar() {
               </button>
               {user ? (
                 <>
-                  <Link to="/profile" onClick={() => setOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 flex items-center gap-2">
-                    <User className="w-4 h-4" /> Profile
-                  </Link>
+                  {profile?.role === 'admin' ? (
+                    <>
+                      <Link to="/admin/profile" onClick={() => setOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Admin Profile
+                      </Link>
+                      <Link to="/admin" onClick={() => setOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 flex items-center gap-2">
+                        <Shield className="w-4 h-4" /> Admin Dashboard
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/profile" onClick={() => setOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Profile
+                      </Link>
+                      <Link to="/dashboard" onClick={() => setOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 flex items-center gap-2">
+                        <LayoutDashboard className="w-4 h-4" /> Dashboard
+                      </Link>
+                    </>
+                  )}
                   <button onClick={handleSignOut} className="px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 flex items-center gap-2">
                     <LogOut className="w-4 h-4" /> Sign Out
                   </button>
