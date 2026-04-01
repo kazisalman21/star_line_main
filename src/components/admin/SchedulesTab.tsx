@@ -37,11 +37,21 @@ export function SchedulesTab() {
   const handleCreate = async () => {
     if (!form.route_id || !form.bus_id || !form.departure_time) return;
     setSaving(true);
+
+    // Calculate arrival time from route duration
+    const selectedRoute = routes.find((r: any) => r.id === form.route_id);
+    const durationMin = selectedRoute?.duration_minutes || 0;
+    const [hh, mm] = form.departure_time.split(':').map(Number);
+    const totalMin = hh * 60 + mm + durationMin;
+    const arrH = Math.floor(totalMin / 60) % 24;
+    const arrM = totalMin % 60;
+    const arrival_time = `${String(arrH).padStart(2, '0')}:${String(arrM).padStart(2, '0')}`;
+
     await createSchedule({
       route_id: form.route_id,
       bus_id: form.bus_id,
       departure_time: form.departure_time,
-      arrival_time: form.departure_time, // simplified for now
+      arrival_time,
       days_of_week: form.days
     });
     setForm({ route_id: '', bus_id: '', departure_time: '', days: [0,1,2,3,4,5,6] });
@@ -130,14 +140,14 @@ export function SchedulesTab() {
           <div className="space-y-4">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Select Route</label>
-              <select value={form.route_id} onChange={e => setForm(p => ({ ...p, route_id: e.target.value }))} className="w-full bg-secondary/50 h-10 px-3 rounded text-sm border-border outline-none">
+              <select title="Select route" value={form.route_id} onChange={e => setForm(p => ({ ...p, route_id: e.target.value }))} className="w-full bg-secondary/50 h-10 px-3 rounded text-sm border-border outline-none">
                 <option value="">Choose route...</option>
                 {routes.map(r => <option key={r.id} value={r.id}>{r.origin} → {r.destination}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Select Bus</label>
-              <select value={form.bus_id} onChange={e => setForm(p => ({ ...p, bus_id: e.target.value }))} className="w-full bg-secondary/50 h-10 px-3 rounded text-sm border-border outline-none">
+              <select title="Select bus" value={form.bus_id} onChange={e => setForm(p => ({ ...p, bus_id: e.target.value }))} className="w-full bg-secondary/50 h-10 px-3 rounded text-sm border-border outline-none">
                 <option value="">Choose bus...</option>
                 {buses.map(b => <option key={b.id} value={b.id}>{b.name} ({b.type})</option>)}
               </select>
