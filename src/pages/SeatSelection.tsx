@@ -63,6 +63,7 @@ export default function SeatSelection() {
   }, [scheduleId, date]);
 
   // Build seat layout from live data
+  // Starline formation: single door-side seat → 2+2 rows → 5-seat back row
   const seatLayout = useMemo(() => {
     if (seatData.length === 0) return [];
     // Group by row label
@@ -72,19 +73,31 @@ export default function SeatSelection() {
       rows[s.rowLabel].push(s);
     });
 
-    // Sort rows alphabetically, and seats within each row by number
+    // Sort rows alphabetically, seats within each row by seat number
     const sortedRowLabels = Object.keys(rows).sort();
     return sortedRowLabels.map(label => {
       const rowSeats = rows[label].sort((a, b) => a.seatNumber.localeCompare(b.seatNumber));
-      // 2+2 layout with aisle
+
+      // Single door-side seat (row with 1 seat, e.g. "A")
+      if (rowSeats.length === 1) {
+        return [rowSeats[0], null, null, null, null];
+      }
+      // Standard 2+2 layout with aisle in the middle
       if (rowSeats.length === 4) {
         return [rowSeats[0], rowSeats[1], null, rowSeats[2], rowSeats[3]];
       }
-      // Back row with 5 seats (no aisle)
+      // Back row — 5 seats, no aisle gap
       if (rowSeats.length === 5) {
-        return rowSeats;
+        return [rowSeats[0], rowSeats[1], rowSeats[2], rowSeats[3], rowSeats[4]];
       }
-      // Fallback: no aisle
+      // 2-seat row (e.g. only left or right side)
+      if (rowSeats.length === 2) {
+        return [rowSeats[0], rowSeats[1], null, null, null];
+      }
+      // 3-seat row (e.g. 2 left + 1 right)
+      if (rowSeats.length === 3) {
+        return [rowSeats[0], rowSeats[1], null, rowSeats[2], null];
+      }
       return rowSeats;
     });
   }, [seatData]);
@@ -270,7 +283,7 @@ export default function SeatSelection() {
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Boarding Point</label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                      <select value={boardingPoint} onChange={e => setBoardingPoint(e.target.value)} className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
+                      <select title="Select boarding point" value={boardingPoint} onChange={e => setBoardingPoint(e.target.value)} className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
                         {[`${from} Terminal`, `${from} Bypass`, `${from} Central`].map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
@@ -279,7 +292,7 @@ export default function SeatSelection() {
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Dropping Point</label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-accent" />
-                      <select value={droppingPoint} onChange={e => setDroppingPoint(e.target.value)} className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
+                      <select title="Select dropping point" value={droppingPoint} onChange={e => setDroppingPoint(e.target.value)} className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
                         {[`${to} Terminal`, `${to} Main Stand`, `${to} City Center`].map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
