@@ -2,55 +2,75 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bus, MapPin, Users, DollarSign, TrendingUp, Clock, AlertTriangle, Headphones } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { getDashboardStats, getUpcomingDepartures, getRevenueChart, getBookingTrends } from '@/services/adminService';
+import { getDashboardStats, getUpcomingDepartures, getRevenueChart, getBookingTrends, getFleetStatus } from '@/services/adminService';
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
     'On Time': 'bg-success/10 text-success',
-    'Delayed 15m': 'bg-warning/10 text-warning',
+    'Delayed': 'bg-warning/10 text-warning',
     'Boarding': 'bg-info/10 text-info',
     'Departed': 'bg-primary/10 text-primary',
+    'Scheduled': 'bg-secondary text-muted-foreground',
   };
   return map[status] || 'bg-secondary text-muted-foreground';
 };
 
-const fleetTypePie = [
-  { name: 'AC', value: 7, color: 'hsl(355, 70%, 42%)' },
-  { name: 'Non-AC', value: 1, color: 'hsl(220, 10%, 50%)' },
-];
+// Determine departure status based on time comparison
+function getDepartureStatus(depTime: string): string {
+  const now = new Date();
+  const [h, m] = depTime.split(':').map(Number);
+  const depDate = new Date();
+  depDate.setHours(h, m, 0, 0);
+  const diffMin = (depDate.getTime() - now.getTime()) / 60000;
+
+  if (diffMin < -15) return 'Departed';
+  if (diffMin < 0) return 'Boarding';
+  if (diffMin <= 30) return 'On Time';
+  return 'Scheduled';
+}
 
 export function OverviewTab() {
   const [stats, setStats] = useState<any>(null);
   const [departures, setDepartures] = useState<any[]>([]);
   const [revenue, setRevenue] = useState<any[]>([]);
   const [occupancyTrend, setOccupancyTrend] = useState<any[]>([]);
+  const [fleetPie, setFleetPie] = useState<{ name: string; value: number; color: string }[]>([]);
 
   useEffect(() => {
     Promise.all([
       getDashboardStats(),
       getUpcomingDepartures(),
       getRevenueChart(7),
-      getBookingTrends(7)
-    ]).then(([s, d, r, t]) => {
+      getBookingTrends(7),
+      getFleetStatus(),
+    ]).then(([s, d, r, t, fleet]) => {
       setStats(s);
       setDepartures(d);
       setRevenue(r.map(x => ({ day: new Date(x.date).toLocaleDateString('en-US', { weekday: 'short' }), revenue: x.revenue })));
-      // Fake occupancy trend based on bookings for now
       setOccupancyTrend(t.map(x => ({ day: new Date(x.date).toLocaleDateString('en-US', { weekday: 'short' }), rate: Math.min(100, x.count * 15) })));
+
+      // BUG-12 FIX: Build fleet pie from actual data instead of hardcoding
+      const pieData: { name: string; value: number; color: string }[] = [];
+      if (fleet.active > 0) pieData.push({ name: 'Active', value: fleet.active, color: 'hsl(142, 70%, 42%)' });
+      if (fleet.maintenance > 0) pieData.push({ name: 'Maintenance', value: fleet.maintenance, color: 'hsl(42, 85%, 52%)' });
+      if (fleet.retired > 0) pieData.push({ name: 'Retired', value: fleet.retired, color: 'hsl(0, 65%, 50%)' });
+      if (pieData.length === 0) pieData.push({ name: 'No Buses', value: 1, color: 'hsl(220, 10%, 50%)' });
+      setFleetPie(pieData);
     });
   }, []);
 
   if (!stats) return <div className="py-12 flex justify-center text-muted-foreground">Loading overview stats...</div>;
 
+  // BUG-13 FIX: All stat cards use real data — no hardcoded fake values
   const statCards = [
     { icon: Bus, label: "Today's Trips", value: stats.todayTrips, color: 'text-primary' },
-    { icon: MapPin, label: 'Active Trips', value: Math.floor(stats.todayTrips * 0.4), color: 'text-success' },
+    { icon: MapPin, label: 'Active Bookings', value: stats.activeBookings, color: 'text-success' },
     { icon: Users, label: 'Passengers', value: stats.totalPassengers, color: 'text-info' },
-    { icon: DollarSign, label: 'Revenue (৳)', value: `${(stats.revenue / 1000).toFixed(0)}K`, color: 'text-accent' },
-    { icon: TrendingUp, label: 'Occupancy', value: `${stats.occupancyRate}%`, color: 'text-primary' },
-    { icon: Clock, label: 'On-Time', value: `94%`, color: 'text-success' },
-    { icon: AlertTriangle, label: 'Delayed', value: 0, color: 'text-warning' },
-    { icon: Headphones, label: 'Support Issues', value: 0, color: 'text-destructive' },
+    { icon: DollarSign, label: 'Revenue (৳)', value: stats.revenue > 0 ? `${(stats.revenue / 1000).toFixed(0)}K` : '—', color: 'text-accent' },
+    { icon: TrendingUp, label: 'Occupancy', value: stats.occupancyRate > 0 ? `${stats.occupancyRate}%` : '—', color: 'text-primary' },
+    { icon: Clock, label: 'Pending', value: stats.pendingPayments, color: 'text-warning' },
+    { icon: AlertTriangle, label: 'Active Routes', value: stats.totalRoutes, color: 'text-info' },
+    { icon: Headphones, label: 'Weekly Rev (৳)', value: stats.weeklyRevenue > 0 ? `${(stats.weeklyRevenue / 1000).toFixed(0)}K` : '—', color: 'text-accent' },
   ];
 
   return (
@@ -83,19 +103,19 @@ export function OverviewTab() {
           </ResponsiveContainer>
         </div>
 
-        {/* Fleet Composition */}
+        {/* BUG-12 FIX: Fleet Composition from actual database data */}
         <div className="glass-card p-6">
-          <h3 className="font-display font-semibold mb-4">Fleet Composition</h3>
+          <h3 className="font-display font-semibold mb-4">Fleet Status</h3>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={fleetTypePie} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
-                {fleetTypePie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+              <Pie data={fleetPie} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
+                {fleetPie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Pie>
               <Tooltip contentStyle={{ background: 'hsl(222 25% 10%)', border: '1px solid hsl(222 20% 18%)', borderRadius: '8px', color: 'hsl(0 0% 95%)' }} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-wrap gap-3 mt-2">
-            {fleetTypePie.map((t, i) => (
+            {fleetPie.map((t, i) => (
               <div key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.color }} />
                 {t.name} ({t.value})
@@ -119,24 +139,27 @@ export function OverviewTab() {
         </div>
       </div>
 
-      {/* Departures */}
+      {/* Departures — BUG-41 FIX: dynamic status based on departure time */}
       <div className="glass-card p-6">
         <h3 className="font-display font-semibold mb-4">Upcoming Departures</h3>
         <div className="grid gap-3 md:grid-cols-2">
-          {departures.length === 0 ? <p className="text-muted-foreground col-span-2 text-sm">No scheduled departures for today.</p> : departures.map((dep) => (
-            <div key={dep.id} className="flex items-center gap-4 bg-secondary/30 p-4 rounded-xl">
-              <div className="text-center min-w-[50px]"><div className="font-display font-bold">{dep.time}</div></div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{dep.route}</div>
-                <div className="text-xs text-muted-foreground">{dep.coach} • {dep.passengers} pax</div>
+          {departures.length === 0 ? <p className="text-muted-foreground col-span-2 text-sm">No scheduled departures for today.</p> : departures.map((dep) => {
+            const depStatus = getDepartureStatus(dep.time);
+            return (
+              <div key={dep.id} className="flex items-center gap-4 bg-secondary/30 p-4 rounded-xl">
+                <div className="text-center min-w-[50px]"><div className="font-display font-bold">{dep.time}</div></div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{dep.route}</div>
+                  <div className="text-xs text-muted-foreground">{dep.coach} • {dep.passengers} pax</div>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="w-16 bg-secondary rounded-full h-1.5"><div className="bg-primary h-1.5 rounded-full" style={{ width: `${dep.occupancy}%` }} /></div>
+                  <div className="text-xs text-muted-foreground text-center mt-0.5">{dep.occupancy}%</div>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusBadge(depStatus)}`}>{depStatus}</span>
               </div>
-              <div className="hidden sm:block">
-                <div className="w-16 bg-secondary rounded-full h-1.5"><div className="bg-primary h-1.5 rounded-full" style={{ width: `${dep.occupancy}%` }} /></div>
-                <div className="text-xs text-muted-foreground text-center mt-0.5">{dep.occupancy}%</div>
-              </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusBadge('On Time')}`}>On Time</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

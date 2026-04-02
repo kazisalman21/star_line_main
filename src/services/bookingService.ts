@@ -213,9 +213,9 @@ export async function createBooking(params: CreateBookingParams): Promise<string
 
     if (seatsErr) {
       console.error('Error creating booking_seats:', seatsErr);
-      // Rollback: delete the booking
+      // Rollback: delete the booking (CASCADE will clean up any partial booking_seats)
       await supabase.from('bookings').delete().eq('id', booking.id);
-      return null;
+      throw new Error(`Booking created but seat assignment failed: ${seatsErr.message}`);
     }
 
     return booking.id;
@@ -380,7 +380,11 @@ export async function getUserBookings(userId: string): Promise<UserBooking[]> {
         schedules (
           departure_time,
           arrival_time,
+          routes (origin, destination),
           buses (name)
+        ),
+        booking_seats (
+          seats (seat_number)
         )
       `)
       .eq('user_id', userId)
@@ -391,31 +395,13 @@ export async function getUserBookings(userId: string): Promise<UserBooking[]> {
       return [];
     }
 
-    // For each booking, get the route info and seat numbers
-    const results: UserBooking[] = [];
-
-    for (const b of bookings) {
-      const schedule = (b as any).schedules;
+    return bookings.map((b: any) => {
+      const schedule = b.schedules;
+      const route = schedule?.routes;
       const busName = schedule?.buses?.name || 'Unknown';
+      const seatNumbers = (b.booking_seats || []).map((sr: any) => sr.seats?.seat_number || '').filter(Boolean);
 
-      // Get route for this schedule
-      const { data: schedWithRoute } = await supabase
-        .from('schedules')
-        .select('routes(origin, destination)')
-        .eq('id', b.schedule_id)
-        .single();
-
-      const route = (schedWithRoute as any)?.routes;
-
-      // Get seat numbers
-      const { data: seatRows } = await supabase
-        .from('booking_seats')
-        .select('seats(seat_number)')
-        .eq('booking_id', b.id);
-
-      const seatNumbers = (seatRows || []).map((sr: any) => sr.seats?.seat_number || '');
-
-      results.push({
+      return {
         id: b.id,
         bookingId: `STR-${b.id.slice(0, 8).toUpperCase()}`,
         status: b.status as UserBooking['status'],
@@ -430,10 +416,8 @@ export async function getUserBookings(userId: string): Promise<UserBooking[]> {
         totalFare: b.total_fare,
         boardingPoint: b.boarding_point,
         droppingPoint: b.dropping_point,
-      });
-    }
-
-    return results;
+      };
+    });
   } catch (err) {
     console.error('Error in getUserBookings:', err);
     return [];

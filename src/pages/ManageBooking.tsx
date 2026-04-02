@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
 import { getBookingDetails, cancelBooking, BookingDetails } from '@/services/bookingService';
+import { supabase } from '@/lib/supabase';
 
 export default function ManageBooking() {
   const navigate = useNavigate();
@@ -21,13 +22,25 @@ export default function ManageBooking() {
     setSearching(true);
     setSearched(true);
 
-    // If the user typed a PNR like "STR-XXXXXXXX", try to extract the UUID portion
-    // Otherwise treat it as a direct UUID
     let bookingId = lookupId.trim();
-    if (bookingId.startsWith('STR-')) {
-      // PNR format: STR-<first 8 chars of UUID in uppercase>
-      // We can't reverse-lookup by PNR without a DB function, so try the raw UUID
-      // For now, let the user paste the full booking ID from their ticket
+    
+    // If the user typed a PNR like "STR-XXXXXXXX", extract the UUID prefix
+    if (bookingId.toUpperCase().startsWith('STR-')) {
+      const idFragment = bookingId.slice(4).toLowerCase();
+      // Search for bookings whose ID starts with this fragment
+      const { data: matches } = await supabase
+        .from('bookings')
+        .select('id')
+        .ilike('id', `${idFragment}%`)
+        .limit(1);
+      
+      if (matches && matches.length > 0) {
+        bookingId = matches[0].id;
+      } else {
+        setBooking(null);
+        setSearching(false);
+        return;
+      }
     }
 
     const result = await getBookingDetails(bookingId);

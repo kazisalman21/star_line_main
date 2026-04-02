@@ -28,6 +28,7 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
   const swap = () => { setFrom(to); setTo(from); };
 
   const handleSearch = () => {
+    if (from === to) return; // BUG-18: prevent same origin/destination
     navigate(`/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}&passengers=${passengers}`);
   };
 
@@ -82,6 +83,7 @@ export default function SearchForm({ variant = 'hero', initialFrom = '', initial
               type="date"
               title="Select travel date"
               value={date}
+              min={getToday()}
               onChange={e => setDate(e.target.value)}
               className="w-full bg-secondary text-foreground rounded-lg pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 [color-scheme:dark]"
             />

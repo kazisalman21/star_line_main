@@ -349,7 +349,11 @@ export default function SeatSelection() {
                     <>Proceed to Checkout <ChevronRight className="w-4 h-4" /></>
                   )}
                 </button>
-                {selected.length === 0 && <p className="text-xs text-muted-foreground mt-2 text-center">Select at least one seat</p>}
+                {selected.length === 0
+                  ? <p className="text-xs text-muted-foreground mt-2 text-center">Select {passengers} seat{passengers > 1 ? 's' : ''} to continue</p>
+                  : selected.length < passengers
+                  ? <p className="text-xs text-amber-400 mt-2 text-center">Select {passengers - selected.length} more seat{passengers - selected.length > 1 ? 's' : ''} ({selected.length}/{passengers})</p>
+                  : <p className="text-xs text-emerald-400 mt-2 text-center">{selected.length} seat{selected.length > 1 ? 's' : ''} selected ✓</p>}
               </div>
             </div>
           </div>

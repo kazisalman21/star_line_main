@@ -30,6 +30,7 @@ export function FleetTab() {
   const [saving, setSaving] = useState(false);
   const [selectedBus, setSelectedBus] = useState<any>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [editingBusId, setEditingBusId] = useState<string | null>(null);
   const { confirm, DialogComponent } = useConfirmDialog();
 
   // Personnel store — dynamic dropdowns
@@ -74,6 +75,42 @@ export function FleetTab() {
       assigned_supervisor_id: busForm.supervisorId || null,
     } as any);
     resetForm();
+    setEditingBusId(null);
+    setShowAddBus(false);
+    setSaving(false);
+    load();
+  };
+
+  const openEdit = (bus: any) => {
+    setEditingBusId(bus.id);
+    setBusForm({
+      name: bus.name || '',
+      regNo: bus.registration_number || '',
+      type: bus.type || 'AC',
+      seats: String(bus.total_seats || 36),
+      fuelType: bus.fuel_type || 'Diesel',
+      driverId: bus.assigned_driver_id || '',
+      staffId: bus.assigned_staff_id || '',
+      supervisorId: bus.assigned_supervisor_id || '',
+    });
+    setShowAddBus(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingBusId || !busForm.name || !busForm.regNo) return;
+    setSaving(true);
+    await updateBus(editingBusId, {
+      name: busForm.name,
+      registration_number: busForm.regNo,
+      type: busForm.type as 'AC' | 'Non-AC',
+      total_seats: parseInt(busForm.seats) || 36,
+      fuel_type: busForm.fuelType,
+      assigned_driver_id: busForm.driverId || null,
+      assigned_staff_id: busForm.staffId || null,
+      assigned_supervisor_id: busForm.supervisorId || null,
+    });
+    resetForm();
+    setEditingBusId(null);
     setShowAddBus(false);
     setSaving(false);
     load();
@@ -108,7 +145,7 @@ export function FleetTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search buses..." className="pl-9 bg-secondary/50 border-border/40 sm:w-64" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <Button onClick={() => { resetForm(); setShowAddBus(true); }} className="btn-primary-glow shrink-0">
+          <Button onClick={() => { resetForm(); setEditingBusId(null); setShowAddBus(true); }} className="btn-primary-glow shrink-0">
             <Plus className="w-4 h-4 mr-1" /> Add Bus
           </Button>
         </div>
@@ -132,7 +169,16 @@ export function FleetTab() {
           <TableBody>
             {buses.length === 0 ? (
               <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No buses created yet. Click "Add Bus" to start.</TableCell></TableRow>
-            ) : buses.filter(b => !searchQuery || b.name.toLowerCase().includes(searchQuery.toLowerCase()) || b.registration_number.toLowerCase().includes(searchQuery.toLowerCase())).map((bus, i) => (
+            ) : buses.filter(b => {
+              if (!searchQuery) return true;
+              const q = searchQuery.toLowerCase();
+              return b.name.toLowerCase().includes(q)
+                || b.registration_number.toLowerCase().includes(q)
+                || (b.type || '').toLowerCase().includes(q)
+                || (b.status || '').toLowerCase().includes(q)
+                || getPersonName(drivers, b.assigned_driver_id).toLowerCase().includes(q)
+                || getPersonName(staff, b.assigned_staff_id).toLowerCase().includes(q);
+            }).map((bus, i) => (
               <motion.tr key={bus.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="border-border/20 hover:bg-secondary/20">
                 <TableCell>
                   <div className="font-medium text-sm">{bus.name}</div>
@@ -151,7 +197,7 @@ export function FleetTab() {
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedBus(bus); setShowViewDialog(true); }}><Eye className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(bus)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(bus.id)}><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </TableCell>
@@ -183,8 +229,8 @@ export function FleetTab() {
       <Dialog open={showAddBus} onOpenChange={setShowAddBus}>
         <DialogContent className="glass-card border-border/40 max-w-xl">
           <DialogHeader>
-            <DialogTitle className="font-display">Add New Bus</DialogTitle>
-            <DialogDescription>Register a new bus to the Starline fleet.</DialogDescription>
+            <DialogTitle className="font-display">{editingBusId ? 'Edit Bus' : 'Add New Bus'}</DialogTitle>
+            <DialogDescription>{editingBusId ? 'Update bus details and assignments.' : 'Register a new bus to the Starline fleet.'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -234,8 +280,8 @@ export function FleetTab() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddBus(false)}>Cancel</Button>
-            <Button className="btn-primary-glow" onClick={handleCreate} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />} Add Bus
+            <Button className="btn-primary-glow" onClick={editingBusId ? handleUpdate : handleCreate} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />} {editingBusId ? 'Save Changes' : 'Add Bus'}
             </Button>
           </DialogFooter>
         </DialogContent>

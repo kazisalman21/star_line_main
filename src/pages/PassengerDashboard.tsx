@@ -21,23 +21,7 @@ const tabs = [
 
 type TabId = typeof tabs[number]['id'];
 
-/* ── No more mock data — live from Supabase ─── */
-
-const liveTrip = {
-  bookingId: 'STR-2026-48291', from: 'Dhaka', to: 'Chattogram',
-  coachName: 'Starline Platinum', coachNumber: 'PLT-07',
-  driver: 'Md. Jamal Hossain', departureTime: '22:00', eta: '03:15',
-  status: 'In Transit', progress: 42, currentLocation: 'Near Daudkandi',
-  speed: '62 km/h', nextStop: 'Comilla Rest Stop', nextStopEta: '15 min',
-  stops: [
-    { name: 'Dhaka Terminal', time: '22:00', status: 'departed' },
-    { name: 'Gazipur Bypass', time: '22:35', status: 'departed' },
-    { name: 'Daudkandi', time: '23:45', status: 'current' },
-    { name: 'Comilla Rest Stop', time: '00:15', status: 'upcoming' },
-    { name: 'Feni Junction', time: '01:30', status: 'upcoming' },
-    { name: 'Chattogram Terminal', time: '03:15', status: 'upcoming' },
-  ],
-};
+/* ── Live tracking derived from actual bookings ─── */
 
 const statusConfig: Record<string, { color: string; bg: string; icon: typeof CheckCircle2; label: string }> = {
   pending: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', icon: Clock, label: 'Pending' },
@@ -104,7 +88,7 @@ export default function PassengerDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <button className="relative p-2.5 rounded-xl bg-secondary/60 border border-border/50 hover:bg-secondary transition-colors">
+              <button title="Notifications" className="relative p-2.5 rounded-xl bg-secondary/60 border border-border/50 hover:bg-secondary transition-colors">
                 <Bell className="w-4 h-4 text-muted-foreground" />
                 <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background" />
               </button>
@@ -285,7 +269,7 @@ export default function PassengerDashboard() {
                           <div className="flex flex-wrap gap-2">
                             {booking.status === 'confirmed' && (
                               <>
-                                <Link to="/ticket" className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity">
+                                <Link to={`/ticket?bookingId=${booking.id}`} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity">
                                   <QrCode className="w-3.5 h-3.5" /> View E-Ticket
                                 </Link>
                                 <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary/60 border border-border/40 text-xs font-medium hover:bg-secondary transition-colors">
@@ -314,111 +298,149 @@ export default function PassengerDashboard() {
             {/* ─── TRACKING TAB ─── */}
             {activeTab === 'tracking' && (
               <motion.div key="tracking" {...fadeUp}>
-                <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden">
-                  <div className="p-5 border-b border-border/30">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                            <Bus className="w-5 h-5 text-emerald-400" />
-                          </div>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
+                {(() => {
+                  // Find the user's current/most-recent confirmed booking
+                  const today = new Date().toISOString().split('T')[0];
+                  const activeBooking = bookings.find(b =>
+                    (b.status === 'confirmed') && b.date >= today
+                  );
+
+                  if (!activeBooking) {
+                    return (
+                      <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-8 text-center">
+                        <div className="w-20 h-20 rounded-full bg-secondary/60 flex items-center justify-center mx-auto mb-5">
+                          <Navigation className="w-8 h-8 text-muted-foreground/40" />
                         </div>
-                        <div>
-                          <p className="text-sm font-bold">{liveTrip.coachName} • {liveTrip.coachNumber}</p>
-                          <p className="text-xs text-muted-foreground">{liveTrip.from} → {liveTrip.to} • {liveTrip.bookingId}</p>
-                        </div>
+                        <h3 className="font-display font-semibold text-lg mb-2">No Active Trips</h3>
+                        <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
+                          Live tracking will appear here when you have an ongoing or upcoming confirmed trip.
+                        </p>
+                        <Link
+                          to="/search"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                        >
+                          <Search className="w-4 h-4" /> Book a Trip
+                        </Link>
                       </div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                        <span className="text-xs font-semibold text-emerald-400">{liveTrip.status}</span>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  }
 
-                  <div className="p-5">
-                    {/* Progress Bar */}
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="text-muted-foreground">{liveTrip.from}</span>
-                      <span className="text-muted-foreground">{liveTrip.to}</span>
-                    </div>
-                    <div className="relative h-2.5 rounded-full bg-secondary/80 overflow-hidden mb-5">
-                      <motion.div
-                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-emerald-500 rounded-full"
-                        initial={{ width: '0%' }}
-                        animate={{ width: `${liveTrip.progress}%` }}
-                        transition={{ duration: 1.5, ease: 'easeOut' }}
-                      />
-                    </div>
+                  // Calculate trip progress from departure & arrival times
+                  const now = new Date();
+                  const [depH, depM] = activeBooking.departureTime.split(':').map(Number);
+                  const [arrH, arrM] = activeBooking.arrivalTime.split(':').map(Number);
+                  const depMinutes = depH * 60 + depM;
+                  let arrMinutes = arrH * 60 + arrM;
+                  if (arrMinutes <= depMinutes) arrMinutes += 1440; // next day
+                  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+                  let currentMin = nowMinutes;
+                  if (currentMin < depMinutes && depMinutes > 720) currentMin += 1440;
+                  const totalDuration = arrMinutes - depMinutes;
+                  const elapsed = currentMin - depMinutes;
+                  const progress = Math.max(0, Math.min(100, Math.round((elapsed / totalDuration) * 100)));
+                  const isInTransit = progress > 0 && progress < 100;
+                  const tripStatus = progress <= 0 ? 'Scheduled' : progress >= 100 ? 'Arrived' : 'In Transit';
 
-                    {/* Live Stats */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-                      {[
-                        { label: 'Location', value: liveTrip.currentLocation, icon: MapPin },
-                        { label: 'Speed', value: liveTrip.speed, icon: Fuel },
-                        { label: 'Next Stop', value: liveTrip.nextStop, icon: MapPinned },
-                        { label: 'ETA', value: liveTrip.eta, icon: Timer },
-                      ].map((s, i) => (
-                        <div key={i} className="p-3 rounded-xl bg-secondary/40 border border-border/30">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <s.icon className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</span>
-                          </div>
-                          <p className="text-sm font-semibold">{s.value}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Stop Timeline */}
-                    <div className="space-y-0">
-                      {liveTrip.stops.map((stop, i) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                              stop.status === 'departed' ? 'bg-primary border-primary' :
-                              stop.status === 'current' ? 'bg-emerald-500 border-emerald-500 animate-pulse' :
-                              'bg-transparent border-muted-foreground/30'
-                            }`}>
-                              {stop.status === 'departed' && <CheckCircle2 className="w-2 h-2 text-primary-foreground" />}
+                  return (
+                    <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden">
+                      <div className="p-5 border-b border-border/30">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                                <Bus className="w-5 h-5 text-emerald-400" />
+                              </div>
+                              {isInTransit && (
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
+                              )}
                             </div>
-                            {i < liveTrip.stops.length - 1 && (
-                              <div className={`w-0.5 h-8 ${stop.status === 'departed' ? 'bg-primary/50' : 'bg-border/50'}`} />
-                            )}
-                          </div>
-                          <div className="flex-1 -mt-0.5 pb-2">
-                            <div className="flex items-center justify-between">
-                              <p className={`text-sm font-medium ${
-                                stop.status === 'current' ? 'text-emerald-400' :
-                                stop.status === 'departed' ? 'text-foreground' : 'text-muted-foreground'
-                              }`}>
-                                {stop.name}
-                                {stop.status === 'current' && (
-                                  <span className="ml-2 text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full">Now</span>
-                                )}
-                              </p>
-                              <span className="text-xs text-muted-foreground">{stop.time}</span>
+                            <div>
+                              <p className="text-sm font-bold">{activeBooking.coachName}</p>
+                              <p className="text-xs text-muted-foreground">{activeBooking.from} → {activeBooking.to} • {activeBooking.bookingId}</p>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="px-5 pb-5">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/40 border border-border/30">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Driver</p>
-                          <p className="text-sm font-medium">{liveTrip.driver}</p>
+                          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                            tripStatus === 'In Transit' ? 'bg-emerald-500/10 border border-emerald-500/20' :
+                            tripStatus === 'Arrived' ? 'bg-blue-500/10 border border-blue-500/20' :
+                            'bg-amber-500/10 border border-amber-500/20'
+                          }`}>
+                            {isInTransit && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />}
+                            <span className={`text-xs font-semibold ${
+                              tripStatus === 'In Transit' ? 'text-emerald-400' :
+                              tripStatus === 'Arrived' ? 'text-blue-400' : 'text-amber-400'
+                            }`}>{tripStatus}</span>
+                          </div>
                         </div>
                       </div>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/15 transition-colors">
-                        <Headphones className="w-3 h-3" /> Contact
-                      </button>
+
+                      <div className="p-5">
+                        {/* Progress Bar */}
+                        <div className="flex items-center justify-between text-xs mb-2">
+                          <span className="text-muted-foreground">{activeBooking.from}</span>
+                          <span className="text-muted-foreground">{activeBooking.to}</span>
+                        </div>
+                        <div className="relative h-2.5 rounded-full bg-secondary/80 overflow-hidden mb-5">
+                          <motion.div
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-emerald-500 rounded-full"
+                            initial={{ width: '0%' }}
+                            animate={{ width: `${progress}%` }}
+                            transition={{ duration: 1.5, ease: 'easeOut' }}
+                          />
+                          {isInTransit && (
+                            <motion.div
+                              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-lg border-2 border-primary"
+                              initial={{ left: '0%' }}
+                              animate={{ left: `${Math.max(1, progress - 2)}%` }}
+                              transition={{ duration: 1.5, ease: 'easeOut' }}
+                            />
+                          )}
+                        </div>
+
+                        {/* Trip Stats */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                          {[
+                            { label: 'Departure', value: activeBooking.departureTime, icon: Clock },
+                            { label: 'Arrival (ETA)', value: activeBooking.arrivalTime, icon: Timer },
+                            { label: 'Boarding', value: activeBooking.boardingPoint, icon: MapPin },
+                            { label: 'Progress', value: `${progress}%`, icon: Navigation },
+                          ].map((s, i) => (
+                            <div key={i} className="p-3 rounded-xl bg-secondary/40 border border-border/30">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <s.icon className="w-3 h-3 text-muted-foreground" />
+                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</span>
+                              </div>
+                              <p className="text-sm font-semibold truncate">{s.value}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Trip Details */}
+                        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground p-3 rounded-xl bg-secondary/30 border border-border/20">
+                          <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3" /> {activeBooking.date}</span>
+                          <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Seats: {activeBooking.seats.join(', ')}</span>
+                          <span className="flex items-center gap-1.5"><CreditCard className="w-3 h-3" /> ৳{activeBooking.totalFare.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="px-5 pb-5">
+                        <div className="flex items-center gap-3">
+                          <Link
+                            to={`/ticket?bookingId=${activeBooking.id}`}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+                          >
+                            <Ticket className="w-3.5 h-3.5" /> View E-Ticket
+                          </Link>
+                          <Link
+                            to="/support"
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-secondary/40 border border-border/30 text-xs font-medium hover:bg-secondary/60 transition-colors"
+                          >
+                            <Headphones className="w-3.5 h-3.5" /> Support
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </motion.div>
             )}
 

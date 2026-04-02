@@ -21,7 +21,7 @@ export interface PersonnelRecord {
 
 export type PersonnelRole = 'driver' | 'staff' | 'supervisor';
 
-function tableForRole(role: PersonnelRole): string {
+function tableForRole(role: PersonnelRole): 'drivers' | 'staff' | 'supervisors' {
   if (role === 'driver') return 'drivers';
   if (role === 'staff') return 'staff';
   return 'supervisors';
@@ -119,7 +119,7 @@ export const usePersonnelStore = create<PersonnelState>((set) => ({
     if (updates.rating !== undefined) row.rating = updates.rating;
     if (updates.trips !== undefined) row.trips = updates.trips;
 
-    const { error } = await supabase.from(table).update(row).eq('id', id);
+    const { error } = await (supabase.from(table) as any).update(row).eq('id', id);
     if (error) { console.error(`Error updating ${role}:`, error); return; }
     const store = usePersonnelStore.getState();
     await store.loadByRole(role);

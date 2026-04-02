@@ -45,6 +45,7 @@ export function SchedulesTab() {
     const totalMin = hh * 60 + mm + durationMin;
     const arrH = Math.floor(totalMin / 60) % 24;
     const arrM = totalMin % 60;
+    const isNextDay = totalMin >= 1440; // crosses midnight
     const arrival_time = `${String(arrH).padStart(2, '0')}:${String(arrM).padStart(2, '0')}`;
 
     await createSchedule({
@@ -103,19 +104,33 @@ export function SchedulesTab() {
           <TableBody>
             {schedules.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No schedules configured</TableCell></TableRow>
-            ) : schedules.map((schedule, i) => {
+            ) : schedules
+              .filter((schedule) => {
+                if (!searchQuery) return true;
+                const route = (schedule as any).routes || {};
+                const bus = (schedule as any).buses || {};
+                const q = searchQuery.toLowerCase();
+                return (route.origin?.toLowerCase().includes(q) || route.destination?.toLowerCase().includes(q) || bus.name?.toLowerCase().includes(q));
+              })
+              .map((schedule, i) => {
               const route = schedule.routes || {};
               const bus = schedule.buses || {};
-              const daysStr = ['Su','Mo','Tu','We','Th','Fr','Sa'].filter((_, i) => (schedule.days_of_week||[]).includes(i)).join(' ');
-              
-              if (searchQuery && !route.origin?.toLowerCase().includes(searchQuery.toLowerCase()) && !route.destination?.toLowerCase().includes(searchQuery.toLowerCase())) return null;
+              const daysStr = ['Su','Mo','Tu','We','Th','Fr','Sa'].filter((_, dayIdx) => (schedule.days_of_week||[]).includes(dayIdx)).join(' ');
 
               return (
                 <motion.tr key={schedule.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="border-border/20 hover:bg-secondary/20">
                   <TableCell>
                     <div className="font-medium text-sm">{route.origin || '?'} → {route.destination || '?'}</div>
                   </TableCell>
-                  <TableCell className="font-medium">{schedule.departure_time?.slice(0, 5)}</TableCell>
+                  <TableCell className="font-medium">
+                    {schedule.departure_time?.slice(0, 5)}
+                    {schedule.arrival_time && (() => {
+                      const [dH] = (schedule.departure_time || '00:00').split(':').map(Number);
+                      const [aH] = (schedule.arrival_time || '00:00').split(':').map(Number);
+                      const isNextDay = aH < dH;
+                      return isNextDay ? <span className="ml-1 text-[10px] text-accent">→ {schedule.arrival_time?.slice(0, 5)}+1</span> : <span className="ml-1 text-xs text-muted-foreground">→ {schedule.arrival_time?.slice(0, 5)}</span>;
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <div className="text-sm">{bus.name || '?'}</div>
                     <div className="text-xs text-muted-foreground">{bus.type || '?'}</div>

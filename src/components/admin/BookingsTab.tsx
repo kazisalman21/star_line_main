@@ -39,16 +39,14 @@ export function BookingsTab() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [page, statusFilter]);
-
-  // Handle search dynamically with a small delay (debounce)
+  // Single consolidated effect — debounces search, responds to page/filter immediately
   useEffect(() => {
     const timer = setTimeout(() => {
-      setPage(1);
       load();
-    }, 500);
+    }, searchQuery ? 400 : 0);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, statusFilter, searchQuery]);
 
   const handleCancel = (id: string) => {
     confirm({
@@ -73,7 +71,7 @@ export function BookingsTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search passenger or PNR..." className="pl-9 bg-secondary/50 border-border/40 sm:w-64" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="h-10 px-3 rounded-md bg-secondary/50 border border-input text-sm outline-none focus:ring-2 focus:ring-primary/40">
+          <select title="Filter by booking status" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="h-10 px-3 rounded-md bg-secondary/50 border border-input text-sm outline-none focus:ring-2 focus:ring-primary/40">
             <option value="all">All Status</option>
             <option value="confirmed">Confirmed</option>
             <option value="pending">Pending</option>

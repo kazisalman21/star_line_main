@@ -24,6 +24,13 @@ export default class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught:', error, errorInfo);
   }
 
+  // BUG-33 FIX: Reset error state when children change (e.g. navigation)
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.children !== this.props.children) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
   render() {
     if (this.state.hasError) {
       return (

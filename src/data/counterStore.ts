@@ -228,10 +228,10 @@ export const useStore = create<CounterStoreState>((set, get) => ({
         .insert({
           origin: data.from,
           destination: data.to,
-          distance_km: 0,
+          distance_km: (data as any).distanceKm || 0,
           duration_minutes: durationMinutes,
           base_fare: data.baseFare,
-          status: data.status === 'draft' ? 'inactive' : data.status === 'active' ? 'active' : 'inactive',
+          status: data.status === 'active' ? 'active' : 'inactive',
           route_code: data.code,
           route_name: data.name,
           direction: data.direction,
@@ -267,7 +267,7 @@ export const useStore = create<CounterStoreState>((set, get) => ({
         });
 
         const { error: cErr } = await supabase.from('route_counters').insert(rows);
-        if (cErr) console.warn('Failed to insert route counters:', cErr);
+        if (cErr) throw new Error(`Failed to insert route counters: ${cErr.message}`);
       }
 
       await get().loadRoutes();
@@ -300,7 +300,8 @@ export const useStore = create<CounterStoreState>((set, get) => ({
       }
 
       if (data.points !== undefined) {
-        await supabase.from('route_counters').delete().eq('route_id', id);
+        const { error: delErr } = await supabase.from('route_counters').delete().eq('route_id', id);
+        if (delErr) throw new Error(`Failed to clear route counters: ${delErr.message}`);
 
         if (data.points.length > 0) {
           const rows = data.points.map((p, idx) => {
@@ -326,7 +327,7 @@ export const useStore = create<CounterStoreState>((set, get) => ({
           });
 
           const { error: cErr } = await supabase.from('route_counters').insert(rows);
-          if (cErr) console.warn('Failed to update route counters:', cErr);
+          if (cErr) throw new Error(`Failed to update route counters (data may be lost for route ${id}): ${cErr.message}`);
         }
       }
 

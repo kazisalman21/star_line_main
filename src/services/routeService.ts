@@ -104,8 +104,9 @@ export async function searchTrips(
   date: string
 ): Promise<BusResult[]> {
   try {
-    // Get the day of week (0 = Sunday, 6 = Saturday)
-    const dayOfWeek = new Date(date).getDay();
+    // Get the day of week (0 = Sunday, 6 = Saturday) — timezone-safe
+    const [y, mo, d] = date.split('-').map(Number);
+    const dayOfWeek = new Date(y, mo - 1, d).getDay();
 
     // Find matching route
     const { data: routes, error: routeError } = await supabase
@@ -177,10 +178,15 @@ export async function searchTrips(
     return schedules.map((schedule: any) => {
       const bus = schedule.buses as Bus;
       const fare = schedule.fare_override || route.base_fare;
-      const fareMultiplier = bus.name.includes('Platinum') ? 2.2
+      // BUG-14 NOTE: fare_override from the schedule is preferred (line above).
+      // The multiplier below is a legacy fallback for schedules without fare_override.
+      // TODO: Migrate all schedules to use fare_override and remove this heuristic.
+      const fareMultiplier = schedule.fare_override ? 1 : (
+        bus.name.includes('Platinum') ? 2.2
         : bus.name.includes('Gold') ? 1.6
         : bus.name.includes('Silver') ? 1.2
-        : 1;
+        : 1
+      );
 
       const booked = bookedCounts[schedule.id] || 0;
       const available = Math.max(0, bus.total_seats - booked);
