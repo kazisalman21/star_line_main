@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Bus, Building2, Route, Ticket, UserCog, Settings, Calendar, Users, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Bus, Building2, Route, Ticket, UserCog, Settings, Calendar, Users, ShieldCheck, MessageSquare, BarChart3 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PageHead from '@/components/PageHead';
@@ -16,8 +16,10 @@ import { DriversTab } from '@/components/admin/DriversTab';
 import { StaffTab } from '@/components/admin/StaffTab';
 import { SupervisorTab } from '@/components/admin/SupervisorTab';
 import { SettingsTab } from '@/components/admin/SettingsTab';
+import AdminComplaintsTab from '@/components/support/AdminComplaintsTab';
+import SupportAnalyticsTab from '@/components/support/SupportAnalyticsTab';
 
-type AdminTab = 'overview' | 'fleet' | 'counters' | 'routes' | 'schedules' | 'bookings' | 'drivers' | 'staff' | 'supervisors' | 'settings';
+type AdminTab = 'overview' | 'fleet' | 'counters' | 'routes' | 'schedules' | 'bookings' | 'drivers' | 'staff' | 'supervisors' | 'complaints' | 'analytics' | 'settings';
 
 const adminTabs: { id: AdminTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -29,6 +31,8 @@ const adminTabs: { id: AdminTab; label: string; icon: typeof LayoutDashboard }[]
   { id: 'drivers', label: 'Drivers', icon: UserCog },
   { id: 'staff', label: 'Staff', icon: Users },
   { id: 'supervisors', label: 'Supervisors', icon: ShieldCheck },
+  { id: 'complaints', label: 'Complaints', icon: MessageSquare },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -46,6 +50,8 @@ export default function AdminDashboard() {
       case 'drivers': return <DriversTab />;
       case 'staff': return <StaffTab />;
       case 'supervisors': return <SupervisorTab />;
+      case 'complaints': return <AdminComplaintsTab />;
+      case 'analytics': return <SupportAnalyticsTab />;
       case 'settings': return <SettingsTab />;
       default: return null;
     }

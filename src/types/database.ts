@@ -524,9 +524,326 @@ export interface Database {
           },
         ];
       };
+      support_sessions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          session_token: string;
+          source: 'web' | 'mobile' | 'admin';
+          status: 'active' | 'resolved' | 'escalated' | 'expired';
+          metadata: Json;
+          started_at: string;
+          last_message_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          session_token?: string;
+          source?: 'web' | 'mobile' | 'admin';
+          status?: 'active' | 'resolved' | 'escalated' | 'expired';
+          metadata?: Json;
+          started_at?: string;
+          last_message_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          session_token?: string;
+          source?: 'web' | 'mobile' | 'admin';
+          status?: 'active' | 'resolved' | 'escalated' | 'expired';
+          metadata?: Json;
+          started_at?: string;
+          last_message_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'support_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      support_messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          sender_type: 'user' | 'ai' | 'admin' | 'system';
+          message_text: string;
+          message_type: 'normal' | 'complaint_collection' | 'system' | 'summary' | 'chips' | 'confirmation';
+          structured_payload: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          sender_type: 'user' | 'ai' | 'admin' | 'system';
+          message_text: string;
+          message_type?: 'normal' | 'complaint_collection' | 'system' | 'summary' | 'chips' | 'confirmation';
+          structured_payload?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          sender_type?: 'user' | 'ai' | 'admin' | 'system';
+          message_text?: string;
+          message_type?: 'normal' | 'complaint_collection' | 'system' | 'summary' | 'chips' | 'confirmation';
+          structured_payload?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'support_messages_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'support_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      complaints: {
+        Row: {
+          id: string;
+          complaint_code: string;
+          user_id: string | null;
+          customer_name: string;
+          phone: string;
+          email: string | null;
+          route: string;
+          travel_date: string | null;
+          boarding_counter: string | null;
+          category: 'bus_delay' | 'payment_issue' | 'booking_issue' | 'staff_behavior' | 'counter_service' | 'seat_or_bus_issue' | 'refund_or_cancellation' | 'lost_item' | 'technical_issue' | 'other';
+          priority: 'low' | 'medium' | 'high' | 'critical';
+          status: 'submitted' | 'under_review' | 'assigned' | 'in_progress' | 'awaiting_customer' | 'resolved' | 'closed' | 'escalated';
+          urgency: 'low' | 'medium' | 'high' | 'critical';
+          complaint_text: string;
+          ai_summary: string | null;
+          sentiment_marker: string | null;
+          requires_human_review: boolean;
+          escalation_flag: boolean;
+          assigned_to: string | null;
+          source_session_id: string | null;
+          preferred_contact_method: 'phone' | 'email' | 'chat';
+          created_at: string;
+          updated_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          complaint_code: string;
+          user_id?: string | null;
+          customer_name: string;
+          phone: string;
+          email?: string | null;
+          route: string;
+          travel_date?: string | null;
+          boarding_counter?: string | null;
+          category: 'bus_delay' | 'payment_issue' | 'booking_issue' | 'staff_behavior' | 'counter_service' | 'seat_or_bus_issue' | 'refund_or_cancellation' | 'lost_item' | 'technical_issue' | 'other';
+          priority?: 'low' | 'medium' | 'high' | 'critical';
+          status?: 'submitted' | 'under_review' | 'assigned' | 'in_progress' | 'awaiting_customer' | 'resolved' | 'closed' | 'escalated';
+          urgency?: 'low' | 'medium' | 'high' | 'critical';
+          complaint_text: string;
+          ai_summary?: string | null;
+          sentiment_marker?: string | null;
+          requires_human_review?: boolean;
+          escalation_flag?: boolean;
+          assigned_to?: string | null;
+          source_session_id?: string | null;
+          preferred_contact_method?: 'phone' | 'email' | 'chat';
+          created_at?: string;
+          updated_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          complaint_code?: string;
+          user_id?: string | null;
+          customer_name?: string;
+          phone?: string;
+          email?: string | null;
+          route?: string;
+          travel_date?: string | null;
+          boarding_counter?: string | null;
+          category?: 'bus_delay' | 'payment_issue' | 'booking_issue' | 'staff_behavior' | 'counter_service' | 'seat_or_bus_issue' | 'refund_or_cancellation' | 'lost_item' | 'technical_issue' | 'other';
+          priority?: 'low' | 'medium' | 'high' | 'critical';
+          status?: 'submitted' | 'under_review' | 'assigned' | 'in_progress' | 'awaiting_customer' | 'resolved' | 'closed' | 'escalated';
+          urgency?: 'low' | 'medium' | 'high' | 'critical';
+          complaint_text?: string;
+          ai_summary?: string | null;
+          sentiment_marker?: string | null;
+          requires_human_review?: boolean;
+          escalation_flag?: boolean;
+          assigned_to?: string | null;
+          source_session_id?: string | null;
+          preferred_contact_method?: 'phone' | 'email' | 'chat';
+          created_at?: string;
+          updated_at?: string;
+          resolved_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'complaints_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'complaints_assigned_to_fkey';
+            columns: ['assigned_to'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'complaints_source_session_id_fkey';
+            columns: ['source_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'support_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      complaint_status_history: {
+        Row: {
+          id: string;
+          complaint_id: string;
+          old_status: string;
+          new_status: string;
+          changed_by: string | null;
+          changed_by_type: 'system' | 'admin' | 'customer' | 'ai';
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          complaint_id: string;
+          old_status: string;
+          new_status: string;
+          changed_by?: string | null;
+          changed_by_type?: 'system' | 'admin' | 'customer' | 'ai';
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          complaint_id?: string;
+          old_status?: string;
+          new_status?: string;
+          changed_by?: string | null;
+          changed_by_type?: 'system' | 'admin' | 'customer' | 'ai';
+          note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'complaint_status_history_complaint_id_fkey';
+            columns: ['complaint_id'];
+            isOneToOne: false;
+            referencedRelation: 'complaints';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      complaint_internal_notes: {
+        Row: {
+          id: string;
+          complaint_id: string;
+          author_id: string;
+          note: string;
+          is_private: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          complaint_id: string;
+          author_id: string;
+          note: string;
+          is_private?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          complaint_id?: string;
+          author_id?: string;
+          note?: string;
+          is_private?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'complaint_internal_notes_complaint_id_fkey';
+            columns: ['complaint_id'];
+            isOneToOne: false;
+            referencedRelation: 'complaints';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'complaint_internal_notes_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      knowledge_base: {
+        Row: {
+          id: string;
+          title: string;
+          category: 'booking' | 'payment' | 'refund' | 'route' | 'counter' | 'baggage' | 'schedule' | 'general' | 'policy' | 'safety' | 'escalation';
+          question: string;
+          answer: string;
+          tags: string[];
+          source_type: 'official' | 'faq' | 'policy' | 'guide';
+          confidence: number;
+          is_active: boolean;
+          search_vector: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          category: 'booking' | 'payment' | 'refund' | 'route' | 'counter' | 'baggage' | 'schedule' | 'general' | 'policy' | 'safety' | 'escalation';
+          question: string;
+          answer: string;
+          tags?: string[];
+          source_type?: 'official' | 'faq' | 'policy' | 'guide';
+          confidence?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          category?: 'booking' | 'payment' | 'refund' | 'route' | 'counter' | 'baggage' | 'schedule' | 'general' | 'policy' | 'safety' | 'escalation';
+          question?: string;
+          answer?: string;
+          tags?: string[];
+          source_type?: 'official' | 'faq' | 'policy' | 'guide';
+          confidence?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      generate_complaint_code: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+    };
     Enums: {
       user_role: 'passenger' | 'admin';
       bus_type: 'AC' | 'Non-AC' | 'Sleeper';
@@ -538,6 +855,9 @@ export interface Database {
       payment_method: 'bkash' | 'nagad' | 'rocket' | 'card';
       payment_status: 'pending' | 'success' | 'failed';
       trip_status: 'scheduled' | 'boarding' | 'in_transit' | 'delayed' | 'arrived' | 'cancelled';
+      complaint_category: 'bus_delay' | 'payment_issue' | 'booking_issue' | 'staff_behavior' | 'counter_service' | 'seat_or_bus_issue' | 'refund_or_cancellation' | 'lost_item' | 'technical_issue' | 'other';
+      complaint_status: 'submitted' | 'under_review' | 'assigned' | 'in_progress' | 'awaiting_customer' | 'resolved' | 'closed' | 'escalated';
+      complaint_priority: 'low' | 'medium' | 'high' | 'critical';
     };
   };
 }

@@ -33,6 +33,8 @@ const PaymentCancel = lazy(() => import("./pages/PaymentCancel.tsx"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService.tsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const MyComplaints = lazy(() => import("./pages/MyComplaints.tsx"));
+import AIChatWidget from "./components/support/AIChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +82,7 @@ const App = () => (
                 <Route path="/manage-booking" element={<ProtectedRoute><ManageBooking /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><PassengerDashboard /></ProtectedRoute>} />
+                <Route path="/my-complaints" element={<ProtectedRoute><MyComplaints /></ProtectedRoute>} />
 
                 {/* Admin routes */}
                 <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
@@ -88,6 +91,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            <AIChatWidget />
           </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
