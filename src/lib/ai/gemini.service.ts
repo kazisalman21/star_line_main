@@ -239,7 +239,7 @@ Return ONLY the summary sentence, nothing else.`;
 
 // ── Fallback Responses ───────────────────────────────────────
 
-function getFallbackResponse(userMessage: string): AISupportResponse {
+async function getFallbackResponse(userMessage: string): Promise<AISupportResponse> {
   const lower = userMessage.toLowerCase();
 
   if (lower.includes('refund') || lower.includes('cancel')) {
@@ -275,9 +275,56 @@ function getFallbackResponse(userMessage: string): AISupportResponse {
     };
   }
 
-  if (lower.includes('track') || lower.includes('stc-')) {
+  // Detect actual complaint code and look it up
+  const complaintCodeMatch = lower.match(/stc-\d{4}-\d{6}/);
+  if (complaintCodeMatch) {
+    const code = complaintCodeMatch[0].toUpperCase();
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data } = await supabase
+        .from('complaints')
+        .select('complaint_code, status, category, priority, route, created_at, ai_summary')
+        .ilike('complaint_code', code)
+        .single();
+
+      if (data) {
+        const statusLabels: Record<string, string> = {
+          submitted: '📝 Submitted',
+          under_review: '🔍 Under Review',
+          assigned: '👤 Assigned',
+          in_progress: '⚙️ In Progress',
+          awaiting_customer: '⏳ Awaiting Your Response',
+          escalated: '🚨 Escalated',
+          resolved: '✅ Resolved',
+          closed: '📁 Closed',
+        };
+
+        return {
+          reply: `Here's the status for **${data.complaint_code}**:\n\n• **Status:** ${statusLabels[data.status] || data.status}\n• **Route:** ${data.route}\n• **Priority:** ${data.priority}\n• **Filed:** ${new Date(data.created_at).toLocaleDateString()}\n${data.ai_summary ? `• **Summary:** ${data.ai_summary}` : ''}\n\nFor details, visit [My Complaints](/my-complaints). Need further help? Call **16XXX**.`,
+          intent: 'general_support' as const,
+          knowledge_used: ['complaint_lookup'],
+          confidence: 0.95,
+          suggest_complaint: false,
+          suggest_human: false,
+        };
+      }
+    } catch {
+      // DB lookup failed, give generic response
+    }
+
     return {
-      reply: 'Please provide your complaint ID (e.g. **STC-2026-001000**) and I\'ll check the status for you.',
+      reply: `I couldn't find a complaint with ID **${code}**. Please double-check the ID and try again.\n\nComplaint IDs look like **STC-2026-001000**. You can find yours in the confirmation message or at [My Complaints](/my-complaints).`,
+      intent: 'general_support',
+      knowledge_used: [],
+      confidence: 0.7,
+      suggest_complaint: false,
+      suggest_human: false,
+    };
+  }
+
+  if (lower.includes('track') || lower.includes('status')) {
+    return {
+      reply: 'I can help you check your complaint status! Please share your complaint ID (e.g. **STC-2026-001000**).\n\nYou can also view all your complaints at [My Complaints](/my-complaints).',
       intent: 'general_support',
       knowledge_used: [],
       confidence: 0.8,
